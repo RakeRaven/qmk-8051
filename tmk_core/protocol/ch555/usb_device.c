@@ -28,6 +28,38 @@ volatile UINT8  KB_USB_SetReport = 0x00;										/* */
 volatile UINT8  USB_EnumStatus = 0x00;											/* USB enumeration status */	
 volatile UINT8  USB_SleepStatus = 0x00;											/* USB sleep state */		
 volatile UINT8  MCU_Sleep_Operate = 0x00;										/* Mcu sleep operation flag */
+
+/*
+ * Raw byte-array USB string descriptors for CH555.
+ * SDCC 8051 has 32-bit wchar_t AND mangles uint16_t flexible array members,
+ * so we bypass all struct/type machinery and hand-place every byte as
+ * correct USB UTF-16LE. Format: bLength, bDescriptorType(0x03), then
+ * pairs of (char, 0x00) for each ASCII character.
+ */
+static const UINT8 RawManufacturerString[] = {
+    18, 0x03,                   /* bLength=18, bDescriptorType=STRING */
+    'R', 0x00,                  /* UTF-16LE 'R' */
+    'e', 0x00,                  /* UTF-16LE 'e' */
+    'd', 0x00,                  /* UTF-16LE 'd' */
+    'r', 0x00,                  /* UTF-16LE 'r' */
+    'a', 0x00,                  /* UTF-16LE 'a' */
+    'g', 0x00,                  /* UTF-16LE 'g' */
+    'o', 0x00,                  /* UTF-16LE 'o' */
+    'n', 0x00                   /* UTF-16LE 'n' */
+};
+
+static const UINT8 RawProductString[] = {
+    20, 0x03,                   /* bLength=20, bDescriptorType=STRING */
+    'K', 0x00,                  /* UTF-16LE 'K' */
+    '5', 0x00,                  /* UTF-16LE '5' */
+    '8', 0x00,                  /* UTF-16LE '8' */
+    '0', 0x00,                  /* UTF-16LE '0' */
+    ' ', 0x00,                  /* UTF-16LE ' ' */
+    'V', 0x00,                  /* UTF-16LE 'V' */
+    'a', 0x00,                  /* UTF-16LE 'a' */
+    't', 0x00,                  /* UTF-16LE 't' */
+    'a', 0x00                   /* UTF-16LE 'a' */
+};
    
 
 volatile UINT8  KB_USB_UpStatus = 0x00;											/* endpoint 1 busy flag*/
@@ -366,13 +398,15 @@ USB_DevIntNext:
 										switch( pD0_SETUP_REQ->wValueL ) 
 										{
 											case 1:
-												pD0Descr = (PUINT8)( &ManufacturerString );
-												len = ManufacturerString.Header.Size;
+												/* Use raw byte array to bypass SDCC struct issues */
+												pD0Descr = (PUINT8)( RawManufacturerString );
+												len = RawManufacturerString[0];
 												break;
 																			
 											case 2:
-												pD0Descr = (PUINT8)( &ProductString );
-												len = ProductString.Header.Size;
+												/* Use raw byte array to bypass SDCC struct issues */
+												pD0Descr = (PUINT8)( RawProductString );
+												len = RawProductString[0];
 												break;
 												
 											case 0:
