@@ -223,34 +223,51 @@ USB_DevIntNext:
 		switch( D0_STATUS & ( bUXS_SETUP_ACT | MASK_UXS_TOKEN | MASK_UXS_ENDP ) )     
 		{
 			/* Analyze action tokens and endpoint numbers */
-			case UXS_TOKEN_IN | 0:                       
-			case bUXS_SETUP_ACT | UXS_TOKEN_IN | 0:
-            	/* endpoint 0# IN */
-				switch( D0SetupReqCode ) 
-				{
-					case USB_GET_DESCRIPTOR:
-						len = D0SetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : D0SetupLen;  /* The length of this transmission */
-						memcpy( pD0_EP0_BUF, pD0Descr, len );  					/* Load upload data */
-						D0SetupLen -= len;
-						pD0Descr += len;
-						D0_EP0T_L = len;
-						D0_EP0RES ^= bUEP_T_TOG;  								/* flip */
-						break;
-						
-					case USB_SET_ADDRESS:
-						D0_ADDR = D0SetupLen;
-						D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
-						break;
+		case bUXS_SETUP_ACT | UXS_TOKEN_IN | 0:
+			/* A new SETUP packet arrived while EP0 was in the middle of
+			 * a multi-packet IN transfer (e.g. string descriptor).
+			 * We MUST abort the old transfer immediately and let the
+			 * loop re-enter to process the new SETUP.  If we don't,
+			 * we'll keep sending stale data with wrong DATA toggle
+			 * bits, causing XACT_ERROR on the host side.
+			 * Windows commonly does this with back-to-back GET STRING
+			 * DESCRIPTOR requests (wLength=130 then wLength=262). */
+			D0SetupReqCode = 0xFF;          /* invalidate old request */
+			D0SetupLen = 0;
+			D0_EP0T_L = 0;
+			D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+			/* Clear the transfer flag and fall through to the goto
+			 * loop, which will re-read USB_IF and find the SETUP
+			 * waiting in D0_STATUS. */
+			break;
 
-					case USB_SET_FEATURE:
-						break;
+		case UXS_TOKEN_IN | 0:
+            	/* endpoint 0# IN — normal continuation (no new SETUP) */
+			switch( D0SetupReqCode ) 
+			{
+				case USB_GET_DESCRIPTOR:
+					len = D0SetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : D0SetupLen;  /* The length of this transmission */
+					memcpy( pD0_EP0_BUF, pD0Descr, len );  				/* Load upload data */
+					D0SetupLen -= len;
+					pD0Descr += len;
+					D0_EP0T_L = len;
+					D0_EP0RES ^= bUEP_T_TOG;  							/* flip */
+					break;
+					
+				case USB_SET_ADDRESS:
+					D0_ADDR = D0SetupLen;
+					D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+					break;
 
-					default:
-						/* The status phase is completed and interrupted or the 0-length data packet is forced to be uploaded to end the control transmission. */
-						D0_EP0T_L = 0;  
-						D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
-						break;
-				}
+				case USB_SET_FEATURE:
+					break;
+
+				default:
+					/* The status phase is completed and interrupted or the 0-length data packet is forced to be uploaded to end the control transmission. */
+					D0_EP0T_L = 0;  
+					D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+					break;
+			}
                 break;
 
 #ifdef USE_D0_EP4_OUT
@@ -334,9 +351,16 @@ USB_DevIntNext:
                 break;
 #endif
                
-			case UXS_TOKEN_OUT | 0:  
-            case bUXS_SETUP_ACT | UXS_TOKEN_OUT | 0:
- 				/* endpoint 0# OUT */
+			case bUXS_SETUP_ACT | UXS_TOKEN_OUT | 0:
+ 				/* New SETUP arrived during EP0 OUT phase — abort old transfer */
+				D0SetupReqCode = 0xFF;
+				D0SetupLen = 0;
+				D0_EP0T_L = 0;
+				D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+				break;
+
+		case UXS_TOKEN_OUT | 0:  
+ 				/* endpoint 0# OUT — normal data/status phase */
 				switch( D0SetupReqCode ) 
 				{
 					case HID_SET_REPORT: 
