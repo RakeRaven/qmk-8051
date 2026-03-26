@@ -951,8 +951,13 @@ USB_DevIntNext:
 			USB_SleepStatus |= 0x02;
 			if( USB_SleepStatus == 0x03 )
 			{
-				/* Host explicitly requested suspend AND bus is suspended → real sleep */
-				MCU_Sleep_Operate = 0x01;
+				/* Host explicitly requested suspend AND bus is suspended.
+				 * DISABLED: CH55X_Sleep_Deal() drops the D+ pull-up from
+				 * 1.5k to 7.5k, which Windows interprets as a physical
+				 * disconnect, causing a connect/disconnect loop + Code 43.
+				 * Safe to disable for a wired keyboard (no battery).
+				 */
+				// MCU_Sleep_Operate = 0x01;
 			}
 			/* NOTE: We no longer clear USB_EnumStatus here.
 			 * The old code cleared it on every suspend that wasn't 0x03,
