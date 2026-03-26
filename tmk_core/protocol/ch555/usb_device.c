@@ -226,20 +226,9 @@ USB_DevIntNext:
 		case bUXS_SETUP_ACT | UXS_TOKEN_IN | 0:
 			/* A new SETUP packet arrived while EP0 was in the middle of
 			 * a multi-packet IN transfer (e.g. string descriptor).
-			 * We MUST abort the old transfer immediately and let the
-			 * loop re-enter to process the new SETUP.  If we don't,
-			 * we'll keep sending stale data with wrong DATA toggle
-			 * bits, causing XACT_ERROR on the host side.
-			 * Windows commonly does this with back-to-back GET STRING
-			 * DESCRIPTOR requests (wLength=130 then wLength=262). */
-			D0SetupReqCode = 0xFF;          /* invalidate old request */
-			D0SetupLen = 0;
-			D0_EP0T_L = 0;
-			D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
-			/* Clear the transfer flag and fall through to the goto
-			 * loop, which will re-read USB_IF and find the SETUP
-			 * waiting in D0_STATUS. */
-			break;
+			 * We MUST abort the old transfer immediately and start processing
+			 * the new SETUP data that is now in the buffer! */
+			goto handle_ep0_setup;
 
 		case UXS_TOKEN_IN | 0:
             	/* endpoint 0# IN — normal continuation (no new SETUP) */
@@ -353,11 +342,7 @@ USB_DevIntNext:
                
 			case bUXS_SETUP_ACT | UXS_TOKEN_OUT | 0:
  				/* New SETUP arrived during EP0 OUT phase — abort old transfer */
-				D0SetupReqCode = 0xFF;
-				D0SetupLen = 0;
-				D0_EP0T_L = 0;
-				D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
-				break;
+				goto handle_ep0_setup;
 
 		case UXS_TOKEN_OUT | 0:  
  				/* endpoint 0# OUT — normal data/status phase */
@@ -387,6 +372,7 @@ USB_DevIntNext:
 //          case bUXS_SETUP_ACT | UXS_TOKEN_FREE | 7:  
 				if(( D0_STATUS & ( bUXS_SETUP_ACT | MASK_UXS_TOKEN ) ) == ( bUXS_SETUP_ACT | UXS_TOKEN_FREE ))
 				{
+handle_ep0_setup:
 					/* endpoint 0# SETUP */
 					len = 0;  														/* Defaults to success and uploading 0 length */ 
 					D0_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
