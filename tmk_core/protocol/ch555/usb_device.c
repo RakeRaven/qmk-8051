@@ -565,6 +565,20 @@ USB_DevIntNext:
 								D0UsbConfig = pD0_SETUP_REQ->wValueL;
 								USB_EnumStatus = 0x01;
 								KB_USB_UpStatus = 0x01;
+#ifdef USE_D0_EP1_IN
+								/* Pre-load empty keyboard report into EP1.
+								 * Windows HidUsb has ~500ms timeout for first
+								 * interrupt IN response - without this, Code 43. */
+								{
+									UINT8 j;
+									PUINT8 ep1buf = pUSB_BUF_DEV0 + UX_EP1_ADDR;
+									for(j = 0; j < 8; j++) {
+										ep1buf[j] = 0;
+									}
+									D0_EP1T_L = 8;
+									D0_EP1RES = UEP_X_RES_ACK;  /* DATA0, ACK */
+								}
+#endif
 								break;			
 																
 							case USB_SET_FEATURE:

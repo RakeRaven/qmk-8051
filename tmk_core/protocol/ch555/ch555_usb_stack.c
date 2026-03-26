@@ -1085,6 +1085,20 @@ void protocol_post_init(void) {
         }
     }
 
+#ifdef USE_D0_EP1_IN
+    /* Send an initial empty keyboard report on EP1 immediately.
+     * Windows' HidUsb driver has a ~500ms timeout for the first
+     * interrupt IN response after SET_CONFIGURATION. If EP1 stays
+     * in NAK (because keyboard_task hasn't run yet to detect any
+     * key changes), Windows aborts the pipe and reports Code 43.
+     * Pre-loading an empty report ensures Windows gets data in time.
+     */
+    if (USB_EnumStatus) {
+        static const uint8_t empty_report[8] = {0};
+        send_report_EP1((void *)empty_report, 8);
+    }
+#endif
+
 	P4_LED_KEY = 0xFF; /* enable key mode (switch PORT4 from LED to GPIO) */
 }
 
