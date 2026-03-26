@@ -1,0 +1,63 @@
+No.     Time           Source                Destination           Protocol Length Info
+    228 15.739500      1.104.0               host                  USB      46     GET DESCRIPTOR Response DEVICE
+
+Frame 228: 46 bytes on wire (368 bits), 46 bytes captured (368 bits) on interface \\.\USBPcap1, id 0
+USB URB
+DEVICE DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+    230 15.743496      1.104.0               host                  USB      37     GET DESCRIPTOR Response CONFIGURATION
+
+Frame 230: 37 bytes on wire (296 bits), 37 bytes captured (296 bits) on interface \\.\USBPcap1, id 0
+USB URB
+CONFIGURATION DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+    232 15.750484      1.104.0               host                  USB      62     GET DESCRIPTOR Response CONFIGURATION
+
+Frame 232: 62 bytes on wire (496 bits), 62 bytes captured (496 bits) on interface \\.\USBPcap1, id 0
+USB URB
+CONFIGURATION DESCRIPTOR
+INTERFACE DESCRIPTOR (0.0): class HID
+HID DESCRIPTOR
+ENDPOINT DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+    234 15.755266      1.104.0               host                  USB      28     SET CONFIGURATION Response
+
+Frame 234: 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap1, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+    236 15.755497      1.104.0               host                  USBHID   28     SET_IDLE Response
+
+Frame 236: 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap1, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+    238 15.766481      1.104.0               host                  USBHID   96     GET DESCRIPTOR Response HID Report
+
+Frame 238: 96 bytes on wire (768 bits), 96 bytes captured (768 bits) on interface \\.\USBPcap1, id 0
+USB URB
+HID Report
+
+No.     Time           Source                Destination           Protocol Length Info
+    248 15.781509      1.104.0               host                  USBHID   28     SET_REPORT Response
+
+Frame 248: 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap1, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+    249 15.789503      1.104.0               host                  USB      68     GET DESCRIPTOR Response STRING
+
+Frame 249: 68 bytes on wire (544 bits), 68 bytes captured (544 bits) on interface \\.\USBPcap1, id 0
+USB URB
+STRING DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+    250 15.816803      1.104.0               host                  USB      52     GET DESCRIPTOR Response STRING[Malformed Packet]
+
+Frame 250: 52 bytes on wire (416 bits), 52 bytes captured (416 bits) on interface \\.\USBPcap1, id 0
+USB URB
+STRING DESCRIPTOR
+[Malformed Packet: USB]

@@ -1,0 +1,23 @@
+Device HID\VID_3938&PID_1195\7&1453cca6&0&0000 was configured.
+
+Driver Name: keyboard.inf
+Driver Package ID: keyboard.inf_amd64_c56788078819b951
+Class GUID: {4d36e96b-e325-11ce-bfc1-08002be10318}
+Driver Date: 06/21/2006
+Driver Version: 10.0.26100.1882
+Driver Provider: Microsoft
+Driver Section: HID_Keyboard_Inst.NT
+Driver Rank: 0xFF1003
+Matching Device ID: HID_DEVICE_SYSTEM_KEYBOARD
+Outranked Drivers: input.inf:HID_DEVICE:00FF1005
+Device Updated: false
+Parent Device: USB\VID_3938&PID_1195\6&13c452c7&0&1
+
+
+Device HID\VID_3938&PID_1195\7&1453cca6&0&0000 was started.
+
+Driver Name: keyboard.inf
+Class GUID: {4d36e96b-e325-11ce-bfc1-08002be10318}
+Service: kbdhid
+Lower Filters: 
+Upper Filters: 

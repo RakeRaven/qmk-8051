@@ -1,0 +1,495 @@
+No.     Time           Source                Destination           Protocol Length Info
+      1 0.000000       host                  2.2.0                 USB      36     GET DESCRIPTOR Request DEVICE
+
+Frame 1: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+      2 0.000000       2.2.0                 host                  USB      46     GET DESCRIPTOR Response DEVICE
+
+Frame 2: Packet, 46 bytes on wire (368 bits), 46 bytes captured (368 bits) on interface \\.\USBPcap2, id 0
+USB URB
+DEVICE DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+      3 0.000000       host                  2.2.0                 USB      36     GET DESCRIPTOR Request CONFIGURATION
+
+Frame 3: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+      4 0.000000       2.2.0                 host                  USB      282    GET DESCRIPTOR Response CONFIGURATION
+
+Frame 4: Packet, 282 bytes on wire (2256 bits), 282 bytes captured (2256 bits) on interface \\.\USBPcap2, id 0
+USB URB
+CONFIGURATION DESCRIPTOR
+INTERFACE ASSOCIATION DESCRIPTOR
+INTERFACE DESCRIPTOR (0.0): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.0): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.1): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.2): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.3): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.4): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.5): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.6): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (2.0): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (2.1): class Wireless Controller
+ENDPOINT DESCRIPTOR
+ENDPOINT DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+      5 0.000000       host                  2.2.0                 USB      36     SET CONFIGURATION Request
+
+Frame 5: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+      6 0.000000       2.2.0                 host                  USB      28     SET CONFIGURATION Response
+
+Frame 6: Packet, 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+      7 0.000000       host                  2.1.0                 USB      36     GET DESCRIPTOR Request DEVICE
+
+Frame 7: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+      8 0.000000       2.1.0                 host                  USB      46     GET DESCRIPTOR Response DEVICE
+
+Frame 8: Packet, 46 bytes on wire (368 bits), 46 bytes captured (368 bits) on interface \\.\USBPcap2, id 0
+USB URB
+DEVICE DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+      9 0.000000       host                  2.1.0                 USB      36     GET DESCRIPTOR Request CONFIGURATION
+
+Frame 9: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     10 0.000000       2.1.0                 host                  USB      746    GET DESCRIPTOR Response CONFIGURATION
+
+Frame 10: Packet, 746 bytes on wire (5968 bits), 746 bytes captured (5968 bits) on interface \\.\USBPcap2, id 0
+USB URB
+CONFIGURATION DESCRIPTOR
+INTERFACE ASSOCIATION DESCRIPTOR
+INTERFACE DESCRIPTOR (0.0): class Video
+VIDEO CONTROL INTERFACE DESCRIPTOR [Header]
+VIDEO CONTROL INTERFACE DESCRIPTOR [Input Terminal] (Entity 1)
+VIDEO CONTROL INTERFACE DESCRIPTOR [Processing Unit] (Entity 2)
+VIDEO CONTROL INTERFACE DESCRIPTOR [Output Terminal] (Entity 3)
+VIDEO CONTROL INTERFACE DESCRIPTOR [Extension Unit] (Entity 4)
+VIDEO CONTROL INTERFACE DESCRIPTOR [Extension Unit] (Entity 7)
+ENDPOINT DESCRIPTOR
+VIDEO CONTROL ENDPOINT DESCRIPTOR [Interrupt]
+INTERFACE DESCRIPTOR (1.0): class Video
+VIDEO STREAMING INTERFACE DESCRIPTOR [Input Header]
+VIDEO STREAMING INTERFACE DESCRIPTOR [Format MJPEG]  (Format 1)
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame MJPEG]   (Index  1): 1280 x  720
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame MJPEG]   (Index  2):  160 x  120
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame MJPEG]   (Index  3):  176 x  144
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame MJPEG]   (Index  4):  320 x  240
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame MJPEG]   (Index  5):  352 x  288
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame MJPEG]   (Index  6):  640 x  480
+VIDEO STREAMING INTERFACE DESCRIPTOR [Colorformat]
+VIDEO STREAMING INTERFACE DESCRIPTOR [Format Uncompressed]  (Format 2): YUY2
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame Uncompressed]   (Index  1): 1280 x  720
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame Uncompressed]   (Index  2):  160 x  120
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame Uncompressed]   (Index  3):  176 x  144
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame Uncompressed]   (Index  4):  320 x  240
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame Uncompressed]   (Index  5):  352 x  288
+VIDEO STREAMING INTERFACE DESCRIPTOR [Frame Uncompressed]   (Index  6):  640 x  480
+VIDEO STREAMING INTERFACE DESCRIPTOR [Colorformat]
+INTERFACE DESCRIPTOR (1.1): class Video
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.2): class Video
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.3): class Video
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.4): class Video
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.5): class Video
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.6): class Video
+ENDPOINT DESCRIPTOR
+INTERFACE DESCRIPTOR (1.7): class Video
+ENDPOINT DESCRIPTOR
+INTERFACE ASSOCIATION DESCRIPTOR
+INTERFACE DESCRIPTOR (2.0): class Application Specific
+DFU Descriptor: DFU FUNCTIONAL
+
+No.     Time           Source                Destination           Protocol Length Info
+     11 0.000000       host                  2.1.0                 USB      36     SET CONFIGURATION Request
+
+Frame 11: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     12 0.000000       2.1.0                 host                  USB      28     SET CONFIGURATION Response
+
+Frame 12: Packet, 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     13 20.160400      host                  2.3.0                 USB      36     GET DESCRIPTOR Request DEVICE
+
+Frame 13: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     14 20.161828      2.3.0                 host                  USB      46     GET DESCRIPTOR Response DEVICE
+
+Frame 14: Packet, 46 bytes on wire (368 bits), 46 bytes captured (368 bits) on interface \\.\USBPcap2, id 0
+USB URB
+DEVICE DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+     15 20.161861      host                  2.3.0                 USB      36     GET DESCRIPTOR Request CONFIGURATION
+
+Frame 15: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     16 20.164828      2.3.0                 host                  USB      37     GET DESCRIPTOR Response CONFIGURATION
+
+Frame 16: Packet, 37 bytes on wire (296 bits), 37 bytes captured (296 bits) on interface \\.\USBPcap2, id 0
+USB URB
+CONFIGURATION DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+     17 20.164860      host                  2.3.0                 USB      36     GET DESCRIPTOR Request CONFIGURATION
+
+Frame 17: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     18 20.167835      2.3.0                 host                  USB      62     GET DESCRIPTOR Response CONFIGURATION
+
+Frame 18: Packet, 62 bytes on wire (496 bits), 62 bytes captured (496 bits) on interface \\.\USBPcap2, id 0
+USB URB
+CONFIGURATION DESCRIPTOR
+INTERFACE DESCRIPTOR (0.0): class HID
+HID DESCRIPTOR
+ENDPOINT DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+     19 20.167884      host                  2.3.0                 USB      36     SET CONFIGURATION Request
+
+Frame 19: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     20 20.171846      2.3.0                 host                  USB      28     SET CONFIGURATION Response
+
+Frame 20: Packet, 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     21 20.171872      host                  2.3.0                 USBHID   36     SET_IDLE Request
+
+Frame 21: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     22 20.172836      2.3.0                 host                  USBHID   28     SET_IDLE Response
+
+Frame 22: Packet, 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     23 20.173035      host                  2.3.0                 USBHID   36     GET DESCRIPTOR Request HID Report
+
+Frame 23: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     24 20.175833      2.3.0                 host                  USBHID   96     GET DESCRIPTOR Response HID Report
+
+Frame 24: Packet, 96 bytes on wire (768 bits), 96 bytes captured (768 bits) on interface \\.\USBPcap2, id 0
+USB URB
+HID Report
+
+No.     Time           Source                Destination           Protocol Length Info
+     25 20.178041      host                  2.3.1                 USB      27     URB_INTERRUPT in
+
+Frame 25: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     26 20.178078      host                  2.3.1                 USB      27     URB_INTERRUPT in
+
+Frame 26: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     27 20.186862      host                  2.3.0                 USBHID   37     SET_REPORT Request
+
+Frame 27: Packet, 37 bytes on wire (296 bits), 37 bytes captured (296 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     28 20.187856      2.3.0                 host                  USBHID   28     SET_REPORT Response
+
+Frame 28: Packet, 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     29 20.189121      host                  2.3.0                 USB      36     GET DESCRIPTOR Request STRING
+
+Frame 29: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     30 20.190845      2.3.0                 host                  USB      68     GET DESCRIPTOR Response STRING
+
+Frame 30: Packet, 68 bytes on wire (544 bits), 68 bytes captured (544 bits) on interface \\.\USBPcap2, id 0
+USB URB
+STRING DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+     31 20.206735      2.3.1                 host                  USB      27     URB_INTERRUPT in
+
+Frame 31: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     32 20.206767      2.3.1                 host                  USB      27     URB_INTERRUPT in
+
+Frame 32: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     33 20.725322      host                  2.3.1                 USB      27     URB_FUNCTION_ABORT_PIPE
+
+Frame 33: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     34 20.725351      2.3.1                 host                  USB      27     URB_FUNCTION_ABORT_PIPE
+
+Frame 34: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     35 36.168085      host                  2.3.0                 USB      36     GET DESCRIPTOR Request DEVICE
+
+Frame 35: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     36 36.169818      2.3.0                 host                  USB      46     GET DESCRIPTOR Response DEVICE
+
+Frame 36: Packet, 46 bytes on wire (368 bits), 46 bytes captured (368 bits) on interface \\.\USBPcap2, id 0
+USB URB
+DEVICE DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+     37 36.169864      host                  2.3.0                 USB      36     GET DESCRIPTOR Request CONFIGURATION
+
+Frame 37: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     38 36.172818      2.3.0                 host                  USB      37     GET DESCRIPTOR Response CONFIGURATION
+
+Frame 38: Packet, 37 bytes on wire (296 bits), 37 bytes captured (296 bits) on interface \\.\USBPcap2, id 0
+USB URB
+CONFIGURATION DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+     39 36.172850      host                  2.3.0                 USB      36     GET DESCRIPTOR Request CONFIGURATION
+
+Frame 39: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     40 36.175823      2.3.0                 host                  USB      62     GET DESCRIPTOR Response CONFIGURATION
+
+Frame 40: Packet, 62 bytes on wire (496 bits), 62 bytes captured (496 bits) on interface \\.\USBPcap2, id 0
+USB URB
+CONFIGURATION DESCRIPTOR
+INTERFACE DESCRIPTOR (0.0): class HID
+HID DESCRIPTOR
+ENDPOINT DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+     41 36.175861      host                  2.3.0                 USB      36     SET CONFIGURATION Request
+
+Frame 41: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     42 36.179835      2.3.0                 host                  USB      28     SET CONFIGURATION Response
+
+Frame 42: Packet, 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     43 36.179863      host                  2.3.0                 USBHID   36     SET_IDLE Request
+
+Frame 43: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     44 36.180828      2.3.0                 host                  USBHID   28     SET_IDLE Response
+
+Frame 44: Packet, 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     45 36.180997      host                  2.3.0                 USBHID   36     GET DESCRIPTOR Request HID Report
+
+Frame 45: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     46 36.183824      2.3.0                 host                  USBHID   96     GET DESCRIPTOR Response HID Report
+
+Frame 46: Packet, 96 bytes on wire (768 bits), 96 bytes captured (768 bits) on interface \\.\USBPcap2, id 0
+USB URB
+HID Report
+
+No.     Time           Source                Destination           Protocol Length Info
+     47 36.186017      host                  2.3.1                 USB      27     URB_INTERRUPT in
+
+Frame 47: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     48 36.186056      host                  2.3.1                 USB      27     URB_INTERRUPT in
+
+Frame 48: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     49 36.193776      host                  2.3.0                 USBHID   37     SET_REPORT Request
+
+Frame 49: Packet, 37 bytes on wire (296 bits), 37 bytes captured (296 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     50 36.194767      host                  2.3.0                 USB      36     GET DESCRIPTOR Request STRING
+
+Frame 50: Packet, 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface \\.\USBPcap2, id 0
+USB URB
+Setup Data
+
+No.     Time           Source                Destination           Protocol Length Info
+     51 36.194839      2.3.0                 host                  USBHID   28     SET_REPORT Response
+
+Frame 51: Packet, 28 bytes on wire (224 bits), 28 bytes captured (224 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     52 36.197833      2.3.0                 host                  USB      68     GET DESCRIPTOR Response STRING
+
+Frame 52: Packet, 68 bytes on wire (544 bits), 68 bytes captured (544 bits) on interface \\.\USBPcap2, id 0
+USB URB
+STRING DESCRIPTOR
+
+No.     Time           Source                Destination           Protocol Length Info
+     53 36.349919      2.3.1                 host                  USB      35     URB_INTERRUPT in
+
+Frame 53: Packet, 35 bytes on wire (280 bits), 35 bytes captured (280 bits) on interface \\.\USBPcap2, id 0
+USB URB
+HID Data: 0000000000000000
+
+No.     Time           Source                Destination           Protocol Length Info
+     54 36.349986      host                  2.3.1                 USB      27     URB_INTERRUPT in
+
+Frame 54: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     55 36.451149      2.3.1                 host                  USB      35     URB_INTERRUPT in
+
+Frame 55: Packet, 35 bytes on wire (280 bits), 35 bytes captured (280 bits) on interface \\.\USBPcap2, id 0
+USB URB
+HID Data: 00001d0000000000
+
+No.     Time           Source                Destination           Protocol Length Info
+     56 36.451249      host                  2.3.1                 USB      27     URB_INTERRUPT in
+
+Frame 56: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     57 36.513944      2.3.1                 host                  USB      35     URB_INTERRUPT in
+
+Frame 57: Packet, 35 bytes on wire (280 bits), 35 bytes captured (280 bits) on interface \\.\USBPcap2, id 0
+USB URB
+HID Data: 0000000000000000
+
+No.     Time           Source                Destination           Protocol Length Info
+     58 36.514021      host                  2.3.1                 USB      27     URB_INTERRUPT in
+
+Frame 58: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     59 36.605366      2.3.1                 host                  USB      35     URB_INTERRUPT in
+
+Frame 59: Packet, 35 bytes on wire (280 bits), 35 bytes captured (280 bits) on interface \\.\USBPcap2, id 0
+USB URB
+HID Data: 00001d0000000000
+
+No.     Time           Source                Destination           Protocol Length Info
+     60 36.605443      host                  2.3.1                 USB      27     URB_INTERRUPT in
+
+Frame 60: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
+
+No.     Time           Source                Destination           Protocol Length Info
+     61 36.662147      2.3.1                 host                  USB      35     URB_INTERRUPT in
+
+Frame 61: Packet, 35 bytes on wire (280 bits), 35 bytes captured (280 bits) on interface \\.\USBPcap2, id 0
+USB URB
+HID Data: 0000000000000000
+
+No.     Time           Source                Destination           Protocol Length Info
+     62 36.662224      host                  2.3.1                 USB      27     URB_INTERRUPT in
+
+Frame 62: Packet, 27 bytes on wire (216 bits), 27 bytes captured (216 bits) on interface \\.\USBPcap2, id 0
+USB URB
