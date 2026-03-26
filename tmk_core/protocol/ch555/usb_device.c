@@ -51,38 +51,38 @@ void USB_EP_init( void )
     D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;  /* toggle bits cleared (DATA0) */
     D0_EP_MOD = bUX_DEV_EN;  
 #ifdef USE_D0_EP1_IN
-    D0_EP1RES = UEP_X_RES_NAK;  /* toggle bit cleared (DATA0), NAK until we have data */
+    D0_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;  /* auto-toggle, NAK until we have data */
 #endif
 #ifdef USE_D0_EP2_IN
-    D0_EP2RES = UEP_X_RES_NAK;
+    D0_EP2RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;
 #endif
 #ifdef USE_D0_EP3_IN
-    D0_EP3RES = UEP_X_RES_NAK; 
+    D0_EP3RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK; 
 #endif
 #ifdef USE_D0_EP5_IN
 	D0_EP_MOD |= bUX_EP5I_EN;
-    D0_EP5RES = UEP_X_RES_NAK; 
+    D0_EP5RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK; 
 #endif
 #ifdef USE_D0_EP6_IN
 	D0_EP_MOD |= bUX_EP6I_EN;
-    D0_EP6RES = UEP_X_RES_NAK; 
+    D0_EP6RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK; 
 #endif
 
 #ifdef USE_D0_EP1_OUT
     D0_EP_MOD |= bUX_EP1O_EN;
-    D0_EP1RES = UEP_X_RES_ACK;  /* toggle bit cleared (DATA0), ACK ready to receive */
+    D0_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_ACK;  /* toggle bit cleared (DATA0), ACK ready to receive */
 #endif
 #ifdef USE_D0_EP2_OUT
     D0_EP_MOD |= bUX_EP2O_EN;
-    D0_EP2RES = UEP_X_RES_ACK;
+    D0_EP2RES = bUEP_X_AUTO_TOG | UEP_X_RES_ACK;
 #endif
 #ifdef USE_D0_EP3_OUT
     D0_EP_MOD |= bUX_EP3O_EN;
-    D0_EP3RES = UEP_X_RES_ACK; 
+    D0_EP3RES = bUEP_X_AUTO_TOG | UEP_X_RES_ACK; 
 #endif
 #ifdef USE_D0_EP4_OUT
     D0_EP_MOD |= bUX_EP4O_EN;
-    D0_EP4RES = UEP_X_RES_ACK; 
+    D0_EP4RES = bUEP_X_AUTO_TOG | UEP_X_RES_ACK; 
 #endif
 
     /* Clear all endpoint transmit lengths */
@@ -141,6 +141,11 @@ void USB_Device_Init( void )
 	//SAFE_MOD = 0x55;
 	//SAFE_MOD = 0xAA;
 	//GLOBAL_CFG |= bXIR_XSFR;               // use __pdata to access xSFR instead of pRAM        
+
+	SAFE_MOD = 0x55;
+	SAFE_MOD = 0xAA;
+	GLOBAL_CFG &= ~bWDOG_EN;                 // disable watch-dog reset
+	SAFE_MOD = 0x00;
 
 	USB_CTRL = 0;                            // usb physical config
 
@@ -576,7 +581,7 @@ USB_DevIntNext:
 										ep1buf[j] = 0;
 									}
 									D0_EP1T_L = 8;
-									D0_EP1RES = UEP_X_RES_ACK;  /* DATA0, ACK */
+									D0_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_ACK;  /* auto-toggle, DATA0, ACK */
 								}
 #endif
 								break;			
@@ -672,55 +677,55 @@ USB_DevIntNext:
 									{
 #ifdef USE_D0_EP6_IN
 										case 0x86:
-											D0_EP6RES = D0_EP6RES & ~(  MASK_UEP_X_RES ) | UEP_X_RES_NAK;
+											D0_EP6RES = D0_EP6RES & ~( bUEP_X_TOG | MASK_UEP_X_RES ) | UEP_X_RES_NAK;
 											break;
 #endif
 											
 #ifdef USE_D0_EP5_IN
 										case 0x85:
-											D0_EP5RES = D0_EP5RES & ~(  MASK_UEP_X_RES ) | UEP_X_RES_NAK;
+											D0_EP5RES = D0_EP5RES & ~( bUEP_X_TOG | MASK_UEP_X_RES ) | UEP_X_RES_NAK;
 											break;
 #endif
 											
 #ifdef USE_D0_EP4_OUT
 										case 0x04:
-											D0_EP4RES = D0_EP4RES & ~(  MASK_UEP_X_RES ) | UEP_X_RES_ACK;
+											D0_EP4RES = D0_EP4RES & ~( bUEP_X_TOG | MASK_UEP_X_RES ) | UEP_X_RES_ACK;
 											break; 
 #endif
 																  
 #ifdef USE_D0_EP3_IN
 										case 0x83:
-											D0_EP3RES = D0_EP3RES & ~(  MASK_UEP_X_RES ) | UEP_X_RES_NAK;
+											D0_EP3RES = D0_EP3RES & ~( bUEP_X_TOG | MASK_UEP_X_RES ) | UEP_X_RES_NAK;
 											break;
 #endif
 											
 #ifdef USE_D0_EP3_OUT
 										case 0x03:
-											D0_EP3RES = D0_EP3RES & ~(  MASK_UEP_X_RES ) | UEP_X_RES_ACK;
+											D0_EP3RES = D0_EP3RES & ~( bUEP_X_TOG | MASK_UEP_X_RES ) | UEP_X_RES_ACK;
 											break; 
 #endif
 																  
 #ifdef USE_D0_EP2_IN
 										case 0x82:                       
-											D0_EP2RES = D0_EP2RES & ~(  MASK_UEP_X_RES ) | UEP_X_RES_NAK;
+											D0_EP2RES = D0_EP2RES & ~( bUEP_X_TOG | MASK_UEP_X_RES ) | UEP_X_RES_NAK;
 											break;   
 #endif
 																
 #ifdef USE_D0_EP2_OUT
 										case 0x02:                       
-											D0_EP2RES = D0_EP2RES & ~(  MASK_UEP_X_RES ) | UEP_X_RES_ACK;
+											D0_EP2RES = D0_EP2RES & ~( bUEP_X_TOG | MASK_UEP_X_RES ) | UEP_X_RES_ACK;
 											break; 
 #endif
 																  
 #ifdef USE_D0_EP1_IN
 										case 0x81:                       
-											D0_EP1RES = D0_EP1RES & ~(  MASK_UEP_X_RES ) | UEP_X_RES_NAK;
+											D0_EP1RES = D0_EP1RES & ~( bUEP_X_TOG | MASK_UEP_X_RES ) | UEP_X_RES_NAK;
 											break;
 #endif
 																   
 #ifdef USE_D0_EP1_OUT
 										case 0x01:                       
-											D0_EP1RES = D0_EP1RES & ~(  MASK_UEP_X_RES ) | UEP_X_RES_ACK;
+											D0_EP1RES = D0_EP1RES & ~( bUEP_X_TOG | MASK_UEP_X_RES ) | UEP_X_RES_ACK;
 											break;
 #endif
 											

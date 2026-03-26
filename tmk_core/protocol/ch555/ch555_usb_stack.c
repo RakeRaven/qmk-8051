@@ -108,7 +108,6 @@ void send_report_EP1(void *report, size_t size) {
     if ( ( D0_EP1RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK ) return;
 	
 	memcpy( pUSB_BUF_DEV0 + UX_EP1_ADDR, (uint8_t *)report, size );
-	D0_EP1RES ^= bUEP_X_TOG;	
 	D0_EP1T_L = size;                                       
 	D0_EP1RES = D0_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
 }
@@ -129,7 +128,6 @@ void send_report_EP2(void *report, size_t size) {
     if ( ( D0_EP2RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK ) return;
 	
 	memcpy( pUSB_BUF_DEV0 + UX_EP2_ADDR, (uint8_t *)report, size );
-	D0_EP2RES ^= bUEP_X_TOG;	
 	D0_EP2T_L = size;                                       
 	D0_EP2RES = D0_EP2RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
 }
@@ -150,7 +148,6 @@ void send_report_EP3(void *report, size_t size) {
     if ( ( D0_EP3RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK ) return;
 	
 	memcpy( pUSB_BUF_DEV0 + UX_EP3_ADDR, (uint8_t *)report, size );
-	D0_EP3RES ^= bUEP_X_TOG;	
 	D0_EP3T_L = size;                                       
 	D0_EP3RES = D0_EP3RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
 }
@@ -171,7 +168,6 @@ void send_report_EP4(void *report, size_t size) {
     if ( ( D0_EP4RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK ) return;
 	
 	memcpy( pUSB_BUF_DEV0 + UX_EP4_ADDR, (uint8_t *)report, size );
-	D0_EP4RES ^= bUEP_X_TOG;	
 	D0_EP4T_L = size;                                       
 	D0_EP4RES = D0_EP4RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
 }
@@ -192,7 +188,6 @@ void send_report_EP5(void *report, size_t size) {
     if ( ( D0_EP5RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK ) return;
 	
 	memcpy( pUSB_BUF_DEV0 + UX_EP5_ADDR, (uint8_t *)report, size );
-	D0_EP5RES ^= bUEP_X_TOG;	
 	D0_EP5T_L = size;                                       
 	D0_EP5RES = D0_EP5RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
 }
@@ -224,7 +219,6 @@ bool read_EP1(void *report, size_t size) {
 	if ( ep1_data_wait ) {                 
         ep1_data_wait = 0;
 	    memcpy( report, pUSB_BUF_DEV0 + UX_EP1_ADDR, size );
-	    D0_EP1RES ^= bUEP_X_TOG;	
 	    D0_EP1RES = D0_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
         return true; //read data success
     }
@@ -236,7 +230,6 @@ bool read_EP2(void *report, size_t size) {
 	if ( ep2_data_wait ) {                 
         ep2_data_wait = 0;
 	    memcpy( report, pUSB_BUF_DEV0 + UX_EP2_ADDR, size );
-	    D0_EP2RES ^= bUEP_X_TOG;	
 	    D0_EP2RES = D0_EP2RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
         return true; //read data success
     }
@@ -248,7 +241,6 @@ bool read_EP3(void *report, size_t size) {
 	if ( ep3_data_wait ) {                 
         ep3_data_wait = 0;
 	    memcpy( report, pUSB_BUF_DEV0 + UX_EP3_ADDR, size );
-	    D0_EP3RES ^= bUEP_X_TOG;	
 	    D0_EP3RES = D0_EP3RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
         return true; //read data success
     }
@@ -260,7 +252,6 @@ bool read_EP4(void *report, size_t size) {
 	if ( ep4_data_wait ) {                 
         ep4_data_wait = 0;
 	    memcpy( report, pUSB_BUF_DEV0 + UX_EP4_ADDR, size );
-	    D0_EP4RES ^= bUEP_X_TOG;	
 	    D0_EP4RES = D0_EP4RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
         return true; //read data success
     }
