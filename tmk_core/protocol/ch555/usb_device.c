@@ -932,11 +932,6 @@ USB_DevIntNext:
 						 */
 						D0SetupReqCode = 0xFF;
 						D0_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;
-						
-						/* Brief delay to let the host see the STALL, then clear it */
-						i = 255;
-						while( i-- );
-						D0_EP0RES = D0_EP0RES & ~(MASK_UEP_R_RES|MASK_UEP_T_RES) | UEP_R_RES_ACK | UEP_T_RES_NAK;
 					}
 					else if( len <= DEF_ENDP0_SIZE ) 
 					{  
