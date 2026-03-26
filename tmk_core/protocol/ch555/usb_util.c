@@ -16,6 +16,7 @@
 #include <LUFA/Drivers/USB/USB.h>
 #include "usb_util.h"
 #include "wait.h"
+#include "usb_device.h"
 
 void usb_disconnect(void) {
     //USB_Disable();TODO implement this
@@ -24,7 +25,7 @@ void usb_disconnect(void) {
 
 bool usb_connected_state(void) {
     //return USB_Device_IsAddressSet(); TODO implement this
-    return true; 
+    return (USB_EnumStatus != 0); 
 }
 
 #if defined(OTGPADE)
@@ -35,3 +36,4 @@ bool usb_vbus_state(void) {
     return USB_VBUS_GetStatus(); // checks state of VBUS
 }
 #endif
+

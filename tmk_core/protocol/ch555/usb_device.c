@@ -47,10 +47,11 @@ volatile UINT8  ep4_data_wait   = 0x00;											/* endpoint 4 data waiting fla
 //UINT8D  RGB_Mode = 0x00;
 void USB_EP_init( void )  
 {
-    D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+    /* EP0: clear toggle bits to DATA0, ACK for OUT/SETUP, NAK for IN */
+    D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;  /* toggle bits cleared (DATA0) */
     D0_EP_MOD = bUX_DEV_EN;  
 #ifdef USE_D0_EP1_IN
-    D0_EP1RES = UEP_X_RES_NAK;
+    D0_EP1RES = UEP_X_RES_NAK;  /* toggle bit cleared (DATA0), NAK until we have data */
 #endif
 #ifdef USE_D0_EP2_IN
     D0_EP2RES = UEP_X_RES_NAK;
@@ -69,11 +70,11 @@ void USB_EP_init( void )
 
 #ifdef USE_D0_EP1_OUT
     D0_EP_MOD |= bUX_EP1O_EN;
-    D0_EP1RES = UEP_X_RES_ACK; 
+    D0_EP1RES = UEP_X_RES_ACK;  /* toggle bit cleared (DATA0), ACK ready to receive */
 #endif
 #ifdef USE_D0_EP2_OUT
     D0_EP_MOD |= bUX_EP2O_EN;
-    D0_EP2RES = UEP_X_RES_ACK; 
+    D0_EP2RES = UEP_X_RES_ACK;
 #endif
 #ifdef USE_D0_EP3_OUT
     D0_EP_MOD |= bUX_EP3O_EN;
@@ -82,6 +83,24 @@ void USB_EP_init( void )
 #ifdef USE_D0_EP4_OUT
     D0_EP_MOD |= bUX_EP4O_EN;
     D0_EP4RES = UEP_X_RES_ACK; 
+#endif
+
+    /* Clear all endpoint transmit lengths */
+    D0_EP0T_L = 0;
+#ifdef USE_D0_EP1_IN
+    D0_EP1T_L = 0;
+#endif
+#ifdef USE_D0_EP2_IN
+    D0_EP2T_L = 0;
+#endif
+#ifdef USE_D0_EP3_IN
+    D0_EP3T_L = 0;
+#endif
+#ifdef USE_D0_EP5_IN
+    D0_EP5T_L = 0;
+#endif
+#ifdef USE_D0_EP6_IN
+    D0_EP6T_L = 0;
 #endif
 }
 /*******************************************************************************
@@ -873,14 +892,14 @@ USB_DevIntNext:
 					
 					if( len == 0xFFFF ) 
 					{  
-						/* operation failed */
+						/* Operation failed — STALL endpoint 0.
+						 * Per USB spec, protocol STALL on EP0 is automatically
+						 * cleared when the next SETUP packet is received.
+						 * The SETUP handler above resets EP0RES at the start,
+						 * so we do NOT need to manually clear the STALL here.
+						 */
 						D0SetupReqCode = 0xFF;
-						D0_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;  
-						
-						/* Delay undoing of stall to prevent it from being too late to set in the next setup */					
-						i = 255;
-						while( i-- );
-						D0_EP0RES = D0_EP0RES & ~(MASK_UEP_R_RES|MASK_UEP_T_RES) | UEP_R_RES_ACK | UEP_T_RES_NAK;	
+						D0_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;
 					}
 					else if( len <= DEF_ENDP0_SIZE ) 
 					{  
@@ -905,47 +924,67 @@ USB_DevIntNext:
     	/* Suspend or wake up events */	
 		if( us & bUX_SUSPEND )
 		{       
-			/* pending events */
-        //print("zzz...\n");
-			USB_SleepStatus |= 0x02;			
-			if( USB_SleepStatus != 0x03 )
-			{				
-				USB_EnumStatus = 0x00;									
-			}
-			else
+			/* Bus suspend detected (no SOF for >3ms) */
+			USB_SleepStatus |= 0x02;
+			if( USB_SleepStatus == 0x03 )
 			{
+				/* Host explicitly requested suspend AND bus is suspended → real sleep */
 				MCU_Sleep_Operate = 0x01;
 			}
+			/* NOTE: We no longer clear USB_EnumStatus here.
+			 * The old code cleared it on every suspend that wasn't 0x03,
+			 * which included the brief suspend during initial enumeration.
+			 * This caused the device to think it wasn't enumerated even
+			 * after SET_CONFIGURATION, leading to failed enumeration on
+			 * Windows and intermittent failures on Linux.
+			 */
 		}
 		else
 		{                      
-			/* Wake event */
+			/* Wake event (SOF resumed) */
 			USB_SleepStatus &= ~0x02;
-			USB_EnumStatus = 0x01;										
+			/* Only restore USB_EnumStatus if we were previously configured.
+			 * Don't unconditionally set it to 1 — that would allow sending
+			 * reports before the host has finished enumeration.
+			 */
+			if( D0UsbConfig != 0 )
+			{
+				USB_EnumStatus = 0x01;
+			}
         }
 		USB_IF = bUX_IF_SUSPEND;
 		D0_STATUS = 0;
     }
 	else if(us & bUX_IF_BUS_RST) 
     {
-    	/*bus reset event*/
-        //print("reset...\n");
-        USB_EP_init();                           // setup endpoints
-        //D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
-        //D0_EP1RES = UEP_X_RES_NAK;
-       	//D0_EP2RES = UEP_X_RES_NAK;
-        //D0_EP3RES = UEP_X_RES_ACK; 
-       	//D0_EP5RES = UEP_X_RES_NAK;
-        //D0_EP_MOD = bUX_EP3O_EN | bUX_DEV_EN;  
-		//D0_EP_MOD |= bUX_EP5I_EN;
-        D0_ADDR = 0;
+    	/* Bus reset event — host is resetting the device.
+		 * Must fully reinitialize all USB state per USB spec. */
+        USB_EP_init();                           /* Re-init endpoints with clean toggle bits (DATA0) */
+        D0_ADDR = 0;								 /* Reset device address to 0 */
         HB_ADDR = 0x7F;             
-        USB_IF = 0xFF;
+        USB_IF = 0xFF;								 /* Clear all pending interrupt flags */
         
         USB_IE = bUX_IE_SUSPEND | bUX_IE_TRANSFER | bUX_IE_BUS_RST;
 
+		/* Fully reset all state variables */
         KB_USB_UpStatus = 0x00;
-		USB_EnumStatus = 0x00;										
+		USB_EnumStatus = 0x00;
+		D0UsbConfig = 0x00;								 /* Not yet configured */
+		D0SetupReqCode = 0xFF;							 /* No pending request */
+		D0SetupLen = 0x00;
+		USB_SleepStatus = 0x00;							 /* Clear sleep state — fresh start */
+#ifdef USE_D0_EP1_OUT
+		ep1_data_wait = 0x00;
+#endif
+#ifdef USE_D0_EP2_OUT
+		ep2_data_wait = 0x00;
+#endif
+#ifdef USE_D0_EP3_OUT
+		ep3_data_wait = 0x00;
+#endif
+#ifdef USE_D0_EP4_OUT
+		ep4_data_wait = 0x00;
+#endif
 
         USB_IF = bUX_IF_BUS_RST;
 	}

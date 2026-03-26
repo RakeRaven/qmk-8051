@@ -1069,8 +1069,23 @@ void protocol_pre_init(void) {
 
 void protocol_post_init(void) {
     host_set_driver(&ch555_usb_stack_driver);
-    mDelaymS(1000); //wait some time for the usb enumeration complete. why? No idea.
-	P4_LED_KEY = 0xFF; // enable key mode 
+
+    /* Wait for USB enumeration to complete.
+     * The old code used a blind 1000ms delay which was unreliable:
+     * - Too short for slow hosts (Windows, USB hubs, KVMs)
+     * - Too long for fast hosts (wasted time)
+     * Now we poll USB_EnumStatus which is set to 1 by the USB interrupt
+     * handler when SET_CONFIGURATION is received from the host.
+     */
+    {
+        uint16_t timeout = 5000;  /* up to 5 seconds */
+        while (!USB_EnumStatus && timeout) {
+            wait_ms(1);
+            timeout--;
+        }
+    }
+
+	P4_LED_KEY = 0xFF; /* enable key mode (switch PORT4 from LED to GPIO) */
 }
 
 #define NO_USB_STARTUP_CHECK //TODO implement this 
