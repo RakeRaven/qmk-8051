@@ -857,6 +857,23 @@ USB_DevIntNext:
 							/* class request */
 							switch( D0SetupReqCode )
 							{
+								case DEF_USB_GET_REPORT:								/* 0x01: GET_REPORT */
+									/* Windows sends GET_REPORT during HID initialization.
+									 * Return an empty keyboard report (8 bytes of zeros).
+									 * Without this, the device STALLs and Windows gives Code 43.
+									 */
+									{
+										UINT8 k;
+										for(k = 0; k < 8; k++) {
+											pD0_EP0_BUF[k] = 0;
+										}
+										len = 8;
+										if( D0SetupLen < len ) {
+											len = D0SetupLen;
+										}
+									}
+									break;
+
 								case DEF_USB_SET_REPORT:			 				/* 0x09: SET_REPORT */
 									break;
 								
@@ -893,13 +910,19 @@ USB_DevIntNext:
 					if( len == 0xFFFF ) 
 					{  
 						/* Operation failed — STALL endpoint 0.
-						 * Per USB spec, protocol STALL on EP0 is automatically
-						 * cleared when the next SETUP packet is received.
-						 * The SETUP handler above resets EP0RES at the start,
-						 * so we do NOT need to manually clear the STALL here.
+						 * CH555 hardware may not auto-clear STALL when the next
+						 * SETUP packet arrives (unlike standard USB controllers).
+						 * We must manually clear it after a brief delay to ensure
+						 * the host sees the STALL response but EP0 is ready for
+						 * the next SETUP. Without this, Windows gives Code 43.
 						 */
 						D0SetupReqCode = 0xFF;
 						D0_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;
+						
+						/* Brief delay to let the host see the STALL, then clear it */
+						i = 255;
+						while( i-- );
+						D0_EP0RES = D0_EP0RES & ~(MASK_UEP_R_RES|MASK_UEP_T_RES) | UEP_R_RES_ACK | UEP_T_RES_NAK;
 					}
 					else if( len <= DEF_ENDP0_SIZE ) 
 					{  

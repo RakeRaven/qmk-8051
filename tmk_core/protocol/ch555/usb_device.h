@@ -86,6 +86,7 @@
 
 /************************************************/
 /* Hid type request */ 
+#define DEF_USB_GET_REPORT         0x01           								/* get report */
 #define DEF_USB_GET_IDLE           0x02           								/* get idle for key or mouse */
 #define DEF_USB_GET_PROTOCOL       0x03          								/* get protocol for bios type */
 #define DEF_USB_SET_REPORT         0x09           								/* set report for key */

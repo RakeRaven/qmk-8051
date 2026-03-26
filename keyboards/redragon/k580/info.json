@@ -4,8 +4,8 @@
     "maintainer": "you",
     "usb": {
         "vid": "0x3938",
-        "pid": "0x1194",
-        "device_version": "0.0.1"
+        "pid": "0x1195",
+        "device_version": "0.0.2"
     },
     "bootloader": "ch55xbl",
     "processor": "ch555",
