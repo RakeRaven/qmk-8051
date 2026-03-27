@@ -114,3 +114,26 @@ compile_commands.json
 .clangd/
 .cache/
 claude.md 
+
+
+# Personal logs and captures
+-/*.txt
+-!/requirements.txt
+-!/requirements-dev.txt
+-/*.md
+-!/readme.md
+-!/license*.md
+-*.pcapng
+-tmp_*
+-/CH555DS1.pdf
+-.
++*.txt
++!requirements.txt
++!requirements-dev.txt
++*.md
++!readme.md
++!license*.md
++*.pcapng
++tmp_*
++*.pcapng
++CH555DS1.pdf
