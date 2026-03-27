@@ -36,7 +36,7 @@ volatile UINT8  MCU_Sleep_Operate = 0x00;										/* Mcu sleep operation flag *
  * correct USB UTF-16LE. Format: bLength, bDescriptorType(0x03), then
  * pairs of (char, 0x00) for each ASCII character.
  */
-static const UINT8 RawManufacturerString[] = {
+static const UINT8 __code RawManufacturerString[] = {
     18, 0x03,                   /* bLength=18, bDescriptorType=STRING */
     'R', 0x00,                  /* UTF-16LE 'R' */
     'e', 0x00,                  /* UTF-16LE 'e' */
@@ -48,7 +48,7 @@ static const UINT8 RawManufacturerString[] = {
     'n', 0x00                   /* UTF-16LE 'n' */
 };
 
-static const UINT8 RawProductString[] = {
+static const UINT8 __code RawProductString[] = {
     20, 0x03,                   /* bLength=20, bDescriptorType=STRING */
     'K', 0x00,                  /* UTF-16LE 'K' */
     '5', 0x00,                  /* UTF-16LE '5' */
@@ -383,13 +383,13 @@ handle_ep0_setup:
 								{
 									case USB_DESCR_TYP_DEVICE:  
 										// USB device descriptor 
-										pD0Descr = (PUINT8)( &DeviceDescriptor );
+										pD0Descr = (PUINT8C)( &DeviceDescriptor );
 										len = sizeof( USB_Descriptor_Device_t );
 										break;
 										
 									case USB_DESCR_TYP_CONFIG:  
 										// USB configuration descriptor 
-										pD0Descr = (PUINT8)( &ConfigurationDescriptor );
+										pD0Descr = (PUINT8C)( &ConfigurationDescriptor );
 										len = sizeof( USB_Descriptor_Configuration_t );
 										break;
 										
@@ -399,23 +399,23 @@ handle_ep0_setup:
 										{
 											case 1:
 												/* Use raw byte array to bypass SDCC struct issues */
-												pD0Descr = (PUINT8)( RawManufacturerString );
+												pD0Descr = (PUINT8C)( RawManufacturerString );
 												len = RawManufacturerString[0];
 												break;
 																			
 											case 2:
 												/* Use raw byte array to bypass SDCC struct issues */
-												pD0Descr = (PUINT8)( RawProductString );
+												pD0Descr = (PUINT8C)( RawProductString );
 												len = RawProductString[0];
 												break;
 												
 											case 0:
-												pD0Descr = (PUINT8)( &LanguageString );
+												pD0Descr = (PUINT8C)( &LanguageString );
 												len = LanguageString.Header.Size;
 												break;
 											#if defined(SERIAL_NUMBER)
 											case 3:
-												pD0Descr = (PUINT8)( &SerialNumberString );
+												pD0Descr = (PUINT8C)( &SerialNumberString );
 												len = SerialNumberString.Header.Size;
 												break;
 											#endif
@@ -434,7 +434,7 @@ handle_ep0_setup:
 											//case 0:
 #ifndef KEYBOARD_SHARED_EP
 											case KEYBOARD_INTERFACE:
-												pD0Descr = (PUINT8)( &ConfigurationDescriptor.Keyboard_HID );        
+												pD0Descr = (PUINT8C)( &ConfigurationDescriptor.Keyboard_HID );        
 												len = 9;
 												break;										
 #endif
@@ -449,7 +449,7 @@ handle_ep0_setup:
 											//case 2:
 #ifdef SHARED_EP_ENABLE
 											case SHARED_INTERFACE:
-												pD0Descr = (PUINT8)( &ConfigurationDescriptor.Shared_HID );        
+												pD0Descr = (PUINT8C)( &ConfigurationDescriptor.Shared_HID );        
 												len = 9;
 												break;			
 #endif
@@ -457,8 +457,8 @@ handle_ep0_setup:
 											//case 1:
 #ifdef RAW_ENABLE
 											case RAW_INTERFACE:
-												pD0Descr = (PUINT8)( &ConfigurationDescriptor.Raw_HID );        
-												len = 9;
+												pD0Descr = (PUINT8C)( &ConfigurationDescriptor.Raw_HID );        
+												len = sizeof(USB_HID_Descriptor_HID_t);
 												break;			
 #endif
 												
@@ -495,14 +495,14 @@ handle_ep0_setup:
 											//case 0:
 #ifndef KEYBOARD_SHARED_EP
 											case KEYBOARD_INTERFACE:
-												pD0Descr = (PUINT8)( KeyboardReport );        
+												pD0Descr = (PUINT8C)( KeyboardReport );        
 												len = KeyboardReport_size;
 												break;										
 #endif
 											
 #if defined(MOUSE_ENABLE) && !defined(MOUSE_SHARED_EP)
                                             case MOUSE_INTERFACE:
-                                                pD0Descr = &MouseReport;
+                                                pD0Descr = (PUINT8C) MouseReport;
                                                 len    = MouseReport_size;
                                                 break;
 #endif
@@ -510,7 +510,7 @@ handle_ep0_setup:
 											//case 2:
 #ifdef SHARED_EP_ENABLE
 											case SHARED_INTERFACE:
-												pD0Descr = (PUINT8)( SharedReport );        
+												pD0Descr = (PUINT8C)( SharedReport );        
 												len = SharedReport_size;
 												break;			
 #endif
@@ -518,26 +518,26 @@ handle_ep0_setup:
 											//case 1:
 #ifdef RAW_ENABLE
 											case RAW_INTERFACE:
-												pD0Descr = (PUINT8)( RawReport );        
+												pD0Descr = (PUINT8C)( RawReport );        
 												len = RawReport_size;
 												break;			
 #endif
 												
 #ifdef CONSOLE_ENABLE
                                             case CONSOLE_INTERFACE:
-                                                pD0Descr = &ConsoleReport;
+                                                pD0Descr = (PUINT8C) ConsoleReport;
                                                 len    = ConsoleReport_size;
                                                 break;
 #endif
 #if defined(JOYSTICK_ENABLE) && !defined(JOYSTICK_SHARED_EP)
                                             case JOYSTICK_INTERFACE:
-                                                pD0Descr = &JoystickReport;
+                                                pD0Descr = (PUINT8C) JoystickReport;
                                                 len    = JoystickReport_size;
                                                 break;
 #endif
 #if defined(DIGITIZER_ENABLE) && !defined(DIGITIZER_SHARED_EP)
                                             case DIGITIZER_INTERFACE:
-                                                pD0Descr = &DigitizerReport;
+                                                pD0Descr = (PUINT8C) DigitizerReport;
                                                 len    = DigitizerReport_size;
                                                 break;
 #endif
