@@ -220,15 +220,20 @@ USB_DevIntNext:
 		//dprintf("%x\n",SP);
 		//dprint("d0tr");
 		/* D0 data transfer completed */
-		switch( D0_STATUS & ( bUXS_SETUP_ACT | MASK_UXS_TOKEN | MASK_UXS_ENDP ) )     
+		
+		/* INCREDIBLY IMPORTANT: bUXS_SETUP_ACT indicates a SETUP packet arrived.
+		 * The CH555 specification dictates that MASK_UXS_TOKEN retains its LAST
+		 * transaction value when a SETUP packet arrives. Therefore, we MUST NOT
+		 * include bUXS_SETUP_ACT in the switch statement below, or we will
+		 * incorrectly jump to a random enpoint's handler and ignore the SETUP! */
+		if( D0_STATUS & bUXS_SETUP_ACT )
+		{
+			goto handle_ep0_setup;
+		}
+
+		switch( D0_STATUS & ( MASK_UXS_TOKEN | MASK_UXS_ENDP ) )     
 		{
 			/* Analyze action tokens and endpoint numbers */
-		case bUXS_SETUP_ACT | UXS_TOKEN_IN | 0:
-			/* A new SETUP packet arrived while EP0 was in the middle of
-			 * a multi-packet IN transfer (e.g. string descriptor).
-			 * We MUST abort the old transfer immediately and start processing
-			 * the new SETUP data that is now in the buffer! */
-			goto handle_ep0_setup;
 
 		case UXS_TOKEN_IN | 0:
             	/* endpoint 0# IN — normal continuation (no new SETUP) */
@@ -269,7 +274,6 @@ USB_DevIntNext:
 
 #ifdef USE_D0_EP4_OUT
 			case UXS_TOKEN_OUT | 4:  
-			case bUXS_SETUP_ACT | UXS_TOKEN_OUT | 4:
 				/*  endpoint 4# download */
 				if( D0_STATUS & bUXS_TOG_OK ) 
 				D0_EP4RES = D0_EP4RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK; 		/* Pause download */
@@ -278,7 +282,6 @@ USB_DevIntNext:
 #endif
 #ifdef USE_D0_EP3_OUT
 			case UXS_TOKEN_OUT | 3:  
-			case bUXS_SETUP_ACT | UXS_TOKEN_OUT | 3:
 				/*  endpoint 3# download */
 				if( D0_STATUS & bUXS_TOG_OK ) 
 				D0_EP3RES = D0_EP3RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK; 		/* Pause download */
@@ -287,7 +290,6 @@ USB_DevIntNext:
 #endif
 #ifdef USE_D0_EP2_OUT
 			case UXS_TOKEN_OUT | 2:  
-			case bUXS_SETUP_ACT | UXS_TOKEN_OUT | 2:
 				/*  endpoint 2# download */
 				if( D0_STATUS & bUXS_TOG_OK ) 
 				D0_EP2RES = D0_EP2RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK; 		/* Pause download */
@@ -296,7 +298,6 @@ USB_DevIntNext:
 #endif
 #ifdef USE_D0_EP1_OUT
 			case UXS_TOKEN_OUT | 1:  
-			case bUXS_SETUP_ACT | UXS_TOKEN_OUT | 1:
 				/*  endpoint 1# download */
 				if( D0_STATUS & bUXS_TOG_OK ) 
 				D0_EP1RES = D0_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK; 		/* Pause download */
@@ -309,7 +310,6 @@ USB_DevIntNext:
                           
 #ifdef USE_D0_EP6_IN
             case UXS_TOKEN_IN | 6:  
-            case bUXS_SETUP_ACT | UXS_TOKEN_IN | 6:
 				/* endpoint 6# upload completed */            	
 				D0_EP6RES = D0_EP6RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK; 		/* Pause upload */
                 break;
@@ -317,7 +317,6 @@ USB_DevIntNext:
 
 #ifdef USE_D0_EP5_IN
             case UXS_TOKEN_IN | 5:  
-            case bUXS_SETUP_ACT | UXS_TOKEN_IN | 5:
 				/* endpoint 5# upload completed */            	
 				D0_EP5RES = D0_EP5RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK; 		/* Pause upload */
                 break;
@@ -325,7 +324,6 @@ USB_DevIntNext:
 
 #ifdef USE_D0_EP3_IN
             case UXS_TOKEN_IN | 3:  
-            case bUXS_SETUP_ACT | UXS_TOKEN_IN | 3:
 				/* endpoint 3# upload completed */            	
 				D0_EP3RES = D0_EP3RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK; 		/* Pause upload */
                 break;
@@ -333,7 +331,6 @@ USB_DevIntNext:
                 
 #ifdef USE_D0_EP2_IN
             case UXS_TOKEN_IN | 2:  
-            case bUXS_SETUP_ACT | UXS_TOKEN_IN | 2:
 				/* endpoint 2# upload completed */            	
 				D0_EP2RES = D0_EP2RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK; 		/* Pause upload */
                 break;
@@ -341,17 +338,12 @@ USB_DevIntNext:
                 
 #ifdef USE_D0_EP1_IN
             case UXS_TOKEN_IN | 1:  
-            case bUXS_SETUP_ACT | UXS_TOKEN_IN | 1:
             	/* endpoint 1# upload completed */
                 D0_EP1RES = D0_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK; 		/* Pause upload */
 				KB_USB_UpStatus = 0x01;
                 break;
 #endif
                
-			case bUXS_SETUP_ACT | UXS_TOKEN_OUT | 0:
- 				/* New SETUP arrived during EP0 OUT phase — abort old transfer */
-				goto handle_ep0_setup;
-
 		case UXS_TOKEN_OUT | 0:  
  				/* endpoint 0# OUT — normal data/status phase */
 				switch( D0SetupReqCode ) 
@@ -370,16 +362,6 @@ USB_DevIntNext:
                 break;
 			
 			default:
-//	        case bUXS_SETUP_ACT | UXS_TOKEN_FREE | 0:    
-//          case bUXS_SETUP_ACT | UXS_TOKEN_FREE | 1:    
-//          case bUXS_SETUP_ACT | UXS_TOKEN_FREE | 2:    
-//          case bUXS_SETUP_ACT | UXS_TOKEN_FREE | 3:    
-//          case bUXS_SETUP_ACT | UXS_TOKEN_FREE | 4:    
-//          case bUXS_SETUP_ACT | UXS_TOKEN_FREE | 5:    
-//          case bUXS_SETUP_ACT | UXS_TOKEN_FREE | 6:    
-//          case bUXS_SETUP_ACT | UXS_TOKEN_FREE | 7:  
-				if(( D0_STATUS & ( bUXS_SETUP_ACT | MASK_UXS_TOKEN ) ) == ( bUXS_SETUP_ACT | UXS_TOKEN_FREE ))
-				{
 handle_ep0_setup:
 					/* endpoint 0# SETUP */
 					len = 0;  														/* Defaults to success and uploading 0 length */ 
@@ -989,7 +971,6 @@ handle_ep0_setup:
 						D0_EP0T_L = 0;  
 						D0_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;  /* The default packet is data1 */
 					}
-				}
 				break;
 		}     
         D0_STATUS = 0;    
