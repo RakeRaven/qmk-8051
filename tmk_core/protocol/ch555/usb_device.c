@@ -576,13 +576,16 @@ handle_ep0_setup:
 								// Determine whether it can be processed normally						
 								if( len != 0xFFFF )
 								{
+									UINT8 i;
 									if( D0SetupLen > len ) 
 									{	
 										D0SetupLen = len;  							/* Limit total length */
 									}
 									len = D0SetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : D0SetupLen;  /* The length of this transmission */
 									D0SetupLen -= len;
-									memcpy( pD0_EP0_BUF, pD0Descr, len );  			/* Load upload data */
+									for( i = 0; i < len; i++ ) {
+										pD0_EP0_BUF[i] = pD0Descr[i];   /* __code read — completely safe & reentrant */
+									}
 									pD0Descr += len;
 								}
 								break;
