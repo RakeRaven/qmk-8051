@@ -43,7 +43,7 @@ quantum/version.h
 /keyboards/**/Makefile
 
 # kbfirmware....
-/keyboards/**/kb.h
+/keyboards/**/**.bin
 /keyboards/**/kb.c
 
 # Eclipse/PyCharm/Other IDE Settings
@@ -127,4 +127,15 @@ claude.md
 tmp_*
 /CH555DS1.pdf
 walkthrough.md
-capture_analysis.md
+capture_analysis.md
+keyboarderror43andsuccessfullyworkingonwindows.txt
+keyboarderror43behavior.txt
+keyboardis1.30.txt   
+keyboardis1.58.txt
+meow.pcapng
+moredetailed.txt    
+spammedA.pcapng
+spammedabunchofAbetweendisconnect.txt
+waymoredetailed.txt
+windoesevetlogs for success enumeration on laptop.txt
+windowseatshit.txt
