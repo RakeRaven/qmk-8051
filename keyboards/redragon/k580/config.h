@@ -27,3 +27,8 @@
 //#define NO_ACTION_TAPPING
 
 //#define HOLD_ON_OTHER_KEY_PRESS
+
+/* Bootmagic: hold this key at power-on to jump to bootloader */
+/* Row 0, Col 0 = Esc key on the K580 (confirmed from EVT demo key table) */
+#define BOOTMAGIC_LITE_ROW    0
+#define BOOTMAGIC_LITE_COLUMN 0

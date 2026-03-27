@@ -16,7 +16,7 @@ KEY_OVERRIDE_ENABLE = no
 COMBO_ENABLE = no #press multiple key at same time to produce other key
 TAP_DANCE_ENABLE = no #rapid press a key to produce other key
 
-BOOTMAGIC_ENABLE = no#press a key during boot to enter bootloader
+BOOTMAGIC_ENABLE = yes # hold Esc at power-on to jump to bootloader
 QMK_SETTINGS = no
 
 
