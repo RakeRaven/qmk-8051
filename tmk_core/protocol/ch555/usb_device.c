@@ -18,7 +18,7 @@
 /* constant variable definition */
 volatile UINT8	D0SetupReqCode = 0xFF;											/* USB Setup package request code */
 volatile UINT16	D0SetupLen = 0x00;												/* USB Setup packet length */
-volatile PUINT8	pD0Descr;
+volatile PUINT8C	pD0Descr;   /* points into __code Flash — MUST be PUINT8C on SDCC/8051 */
 
 volatile UINT8  D0UsbConfig = 0x00;												/* USB configuration flags - the Configuation Id selected */
 volatile UINT8  Report_Value = 0x00;                                            /* hid interface related */
@@ -235,13 +235,21 @@ USB_DevIntNext:
 			switch( D0SetupReqCode ) 
 			{
 				case USB_GET_DESCRIPTOR:
-					len = D0SetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : D0SetupLen;  /* The length of this transmission */
-					memcpy( pD0_EP0_BUF, pD0Descr, len );  				/* Load upload data */
+				{
+					/* SDCC/8051: pD0Descr is __code space. memcpy() with a generic
+					 * pointer silently reads from the wrong address space after the
+					 * first 64-byte chunk. Use an explicit byte loop instead. */
+					UINT8 i;
+					len = D0SetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : D0SetupLen;
+					for( i = 0; i < len; i++ ) {
+						pD0_EP0_BUF[i] = pD0Descr[i];   /* __code read — correct on SDCC */
+					}
 					D0SetupLen -= len;
-					pD0Descr += len;
-					D0_EP0T_L = len;
-					D0_EP0RES ^= bUEP_T_TOG;  							/* flip */
+					pD0Descr   += len;
+					D0_EP0T_L   = len;
+					D0_EP0RES  ^= bUEP_T_TOG;
 					break;
+				}
 					
 				case USB_SET_ADDRESS:
 					D0_ADDR = D0SetupLen;
