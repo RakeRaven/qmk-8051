@@ -147,6 +147,54 @@ typedef struct {
 #endif
 } USB_Descriptor_Configuration_t;
 
+typedef struct {
+    USB_Descriptor_Configuration_Header_t Config;
+#ifdef SHARED_EP_ENABLE
+    USB_Descriptor_Interface_t Shared_Interface;
+    USB_HID_Descriptor_HID_t   Shared_HID;
+    USB_Descriptor_Endpoint_t  Shared_INEndpoint;
+#endif
+} ATTR_PACKED USB_Descriptor_Configuration_D1_t;
+
+typedef struct {
+    USB_Descriptor_Configuration_Header_t Config;
+
+#ifdef RAW_ENABLE
+    // Raw HID Interface
+    USB_Descriptor_Interface_t Raw_Interface;
+    USB_HID_Descriptor_HID_t   Raw_HID;
+    USB_Descriptor_Endpoint_t  Raw_INEndpoint;
+    USB_Descriptor_Endpoint_t  Raw_OUTEndpoint;
+#endif
+
+#ifdef CONSOLE_ENABLE
+    // Console HID Interface
+    USB_Descriptor_Interface_t Console_Interface;
+    USB_HID_Descriptor_HID_t   Console_HID;
+    USB_Descriptor_Endpoint_t  Console_INEndpoint;
+    USB_Descriptor_Endpoint_t  Console_OUTEndpoint;
+#endif
+} ATTR_PACKED USB_Descriptor_Configuration_D2_t;
+
+// Hub Descriptor (Type 0x29)
+typedef struct {
+    uint8_t  bDescLength;
+    uint8_t  bDescriptorType;
+    uint8_t  bNbrPorts;
+    uint16_t wHubCharacteristics;
+    uint8_t  bPwrOn2PwrGood;
+    uint8_t  bHubContrCurrent;
+    uint8_t  DeviceRemovable;
+    uint8_t  PortPwrCtrlMask;
+} ATTR_PACKED USB_Descriptor_Hub_t;
+
+typedef struct {
+    USB_Descriptor_Configuration_Header_t Config;
+    USB_Descriptor_Interface_t            Hub_Interface;
+    USB_Descriptor_Endpoint_t             Hub_INEndpoint;
+} ATTR_PACKED USB_Descriptor_Hub_Configuration_t;
+
+
 /*
  * Interface indexes
  */
@@ -391,11 +439,24 @@ extern const uint8_t ConsoleReport_size;
 
 extern const USB_Descriptor_Device_t PROGMEM DeviceDescriptor;
 extern const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor;
+
+#ifdef SHARED_EP_ENABLE
+extern const USB_Descriptor_Configuration_D1_t PROGMEM ConfigurationDescriptor_D1;
+#endif
+
+#if defined(RAW_ENABLE) || defined(CONSOLE_ENABLE)
+extern const USB_Descriptor_Configuration_D2_t PROGMEM ConfigurationDescriptor_D2;
+#endif
+
 extern const USB_Descriptor_String_t PROGMEM LanguageString;
 extern const USB_Descriptor_String_t PROGMEM ManufacturerString;
 extern const USB_Descriptor_String_t PROGMEM ProductString;
 #if defined(SERIAL_NUMBER)
 extern const USB_Descriptor_String_t PROGMEM SerialNumberString;
 #endif
+
+extern const USB_Descriptor_Device_t PROGMEM HubDeviceDescriptor;
+extern const USB_Descriptor_Hub_Configuration_t PROGMEM HubConfigurationDescriptor;
+extern const USB_Descriptor_Hub_t PROGMEM HubDescriptor;
 
 uint16_t get_usb_descriptor(const uint16_t wValue, const uint16_t wIndex, const uint16_t wLength, const void** const DescriptorAddress);

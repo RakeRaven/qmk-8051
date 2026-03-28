@@ -20,6 +20,25 @@ volatile UINT8	D0SetupReqCode = 0xFF;											/* USB Setup package request cod
 volatile UINT16	D0SetupLen = 0x00;												/* USB Setup packet length */
 volatile PUINT8C	pD0Descr;   /* points into __code Flash — MUST be PUINT8C on SDCC/8051 */
 
+// Hub specific EP0 variables
+volatile UINT8	HBSetupReqCode = 0xFF;
+volatile UINT16	HBSetupLen = 0x00;
+volatile PUINT8C pHBDescr;
+
+// D1 specific EP0 variables
+volatile UINT8	D1SetupReqCode = 0xFF;
+volatile UINT16	D1SetupLen = 0x00;
+volatile PUINT8C pD1Descr;
+volatile UINT8  D1UsbConfig = 0x00;
+
+// D2 specific EP0 variables
+volatile UINT8	D2SetupReqCode = 0xFF;
+volatile UINT16	D2SetupLen = 0x00;
+volatile PUINT8C pD2Descr;
+volatile UINT8  D2UsbConfig = 0x00;
+
+#define pHB_SETUP_REQ ((PXUSB_SETUP_REQ)pHB_EP0_BUF)
+
 volatile UINT8  D0UsbConfig = 0x00;												/* USB configuration flags - the Configuation Id selected */
 volatile UINT8  Report_Value = 0x00;                                            /* hid interface related */
 volatile UINT8  Idle_Value = 0x00;                                              /* host request hid interface go idle */
@@ -80,8 +99,15 @@ volatile UINT8  ep4_data_wait   = 0x00;											/* endpoint 4 data waiting fla
 void USB_EP_init( void )  
 {
     /* EP0: clear toggle bits to DATA0, ACK for OUT/SETUP, NAK for IN */
+    HB_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+    HB_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;
+
     D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;  /* toggle bits cleared (DATA0) */
     D0_EP_MOD = bUX_DEV_EN;  
+    D1_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+    D1_EP_MOD = bUX_DEV_EN;
+    D2_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+    D2_EP_MOD = bUX_DEV_EN;
 #ifdef USE_D0_EP1_IN
     D0_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;  /* auto-toggle, NAK until we have data */
 #endif
@@ -118,7 +144,11 @@ void USB_EP_init( void )
 #endif
 
     /* Clear all endpoint transmit lengths */
+    HB_EP0T_L = 0;
+    HB_EP1T_L = 0;
     D0_EP0T_L = 0;
+    D1_EP0T_L = 0;
+    D2_EP0T_L = 0;
 #ifdef USE_D0_EP1_IN
     D0_EP1T_L = 0;
 #endif
@@ -147,6 +177,14 @@ void USB_Device_Init( void )
 	/* Initialize related variables */
 	D0SetupReqCode = 0xFF;														/* USB Setup package request code */
 	D0SetupLen = 0x00;															/* USB Setup packet length */
+	HBSetupReqCode = 0xFF;
+	HBSetupLen = 0x00;
+	D1SetupReqCode = 0xFF;
+	D1SetupLen = 0x00;
+	D1UsbConfig = 0x00;
+	D2SetupReqCode = 0xFF;
+	D2SetupLen = 0x00;
+	D2UsbConfig = 0x00;
 	D0UsbConfig = 0x00;															/* USB configuration flags */
 	USB_EnumStatus = 0x00;														/* USB enumeration status */	
 	USB_SleepStatus = 0x00;														/* USB sleep state */		
@@ -190,6 +228,8 @@ void USB_Device_Init( void )
 	//D0_EP_MOD |= bUX_EP5I_EN;
 
 	D0_ADDR = 0;
+	D1_ADDR = 0;
+	D2_ADDR = 0;
 	HB_ADDR = 0x7F;             												/* Set this address to forward the received data directly to d0 */
 	USB_IF = 0xFF;
 	USB_IE = bUX_IE_SUSPEND | bUX_IE_TRANSFER | bUX_IE_BUS_RST;
@@ -215,7 +255,163 @@ void USB_DeviceInterrupt( void ) __interrupt(INT_NO_USB) //__using(1)
 
 USB_DevIntNext:
 	us = USB_IF; 
-	if( us & bUX_IF_D0_TRANS )            
+	if ( us & bUX_IF_HB_TRANS )
+	{
+		// -------------------------------------------------------------------
+		// USBHB (Hub) handling skeleton
+		// -------------------------------------------------------------------
+		if( HB_STATUS & bUXS_SETUP_ACT )
+		{
+			goto handle_hb_ep0_setup;
+		}
+
+		switch ( HB_STATUS & ( MASK_UXS_TOKEN | MASK_UXS_ENDP ) )
+		{
+			case UXS_TOKEN_IN | 0:
+				switch( HBSetupReqCode )
+				{
+					case USB_GET_DESCRIPTOR:
+					{
+						UINT8 i;
+						len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
+						for( i = 0; i < len; i++ ) {
+							pHB_EP0_BUF[i] = pHBDescr[i];
+						}
+						HBSetupLen -= len;
+						pHBDescr   += len;
+						HB_EP0T_L   = len;
+						HB_EP0RES  ^= bUEP_T_TOG;
+						break;
+					}
+					case USB_SET_ADDRESS:
+						HB_ADDR = HBSetupLen;
+						HB_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+						break;
+					default:
+						HB_EP0T_L = 0;  
+						HB_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+						break;
+				}
+				break;
+				
+			case UXS_TOKEN_OUT | 0:
+				HB_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+				break;
+				
+			default:
+handle_hb_ep0_setup:
+				len = 0;
+				HB_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+				HBSetupLen = pHB_SETUP_REQ->wLengthL + ( (UINT16)pHB_SETUP_REQ->wLengthH << 8 );
+				HBSetupReqCode = pHB_SETUP_REQ->bRequest;
+
+				// CLASS Requests (Hub Descriptor, SetPortPower, GetPortStatus, etc.)
+				if( ( pHB_SETUP_REQ->bRequestType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_CLASS )
+				{
+					switch( HBSetupReqCode )
+					{
+						case USB_GET_DESCRIPTOR:
+							if( pHB_SETUP_REQ->wValueH == 0x29 ) // Hub Descriptor
+							{
+								pHBDescr = (PUINT8C)(&HubDescriptor);
+								len = sizeof(USB_Descriptor_Hub_t);
+								if( len != 0xFFFF )
+								{
+									UINT8 i;
+									if( HBSetupLen > len ) HBSetupLen = len;
+									len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
+									HBSetupLen -= len;
+									for( i = 0; i < len; i++ ) pHB_EP0_BUF[i] = pHBDescr[i];
+									pHBDescr += len;
+								}
+							}
+							break;
+							
+						case 0x03: // SetFeature (e.g. SetPortPower)
+							len = 0; // successfully ACK
+							break;
+							
+						case 0x01: // ClearFeature
+							len = 0; // successfully ACK
+							break;
+							
+						case 0x00: // GetStatus (Hub or Port status)
+							pHB_EP0_BUF[0] = 0x00;
+							pHB_EP0_BUF[1] = 0x00;
+							pHB_EP0_BUF[2] = 0x00;
+							pHB_EP0_BUF[3] = 0x00; // Stub with zeros for now so Host doesn't hang
+							len = 4;
+							if( HBSetupLen > len ) HBSetupLen = len;
+							len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
+							HBSetupLen -= len;
+							HB_EP0T_L = len;
+							break;
+							
+						default:
+							len = 0xFFFF;
+							break;
+					}
+				}
+				// STANDARD Requests
+				else if( ( pHB_SETUP_REQ->bRequestType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_STANDARD )
+				{
+					switch( HBSetupReqCode )
+					{
+						case USB_GET_DESCRIPTOR:
+							switch( pHB_SETUP_REQ->wValueH )
+							{
+								case 0x01: // Device
+									pHBDescr = (PUINT8C)(&HubDeviceDescriptor);
+									len = sizeof(USB_Descriptor_Device_t);
+									break;
+								case 0x02: // Configuration
+									pHBDescr = (PUINT8C)(&HubConfigurationDescriptor);
+									len = sizeof(USB_Descriptor_Hub_Configuration_t);
+									break;
+								case 0x29: // Hub Descriptor
+									pHBDescr = (PUINT8C)(&HubDescriptor);
+									len = sizeof(USB_Descriptor_Hub_t);
+									break;
+								default:
+									len = 0xFFFF;
+									break;
+							}
+							if( len != 0xFFFF )
+							{
+								UINT8 i;
+								if( HBSetupLen > len ) HBSetupLen = len;
+								len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
+								HBSetupLen -= len;
+								for( i = 0; i < len; i++ ) pHB_EP0_BUF[i] = pHBDescr[i];
+								pHBDescr += len;
+							}
+							break;
+							
+						case USB_SET_ADDRESS:
+							HBSetupLen = pHB_SETUP_REQ->wValueL;
+							break;
+							
+						case USB_SET_CONFIGURATION:
+							break;
+							
+						default:
+							len = 0xFFFF;
+							break;
+					}
+				}
+				else
+				{
+					len = 0xFFFF;
+				}
+
+				if (len == 0xFFFF)
+					HB_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;
+				else
+					HB_EP0T_L = len;
+				break;
+		}
+	}
+	else if( us & bUX_IF_D0_TRANS )            
 	{
 		//dprintf("%x\n",SP);
 		//dprint("d0tr");
@@ -977,6 +1173,378 @@ handle_ep0_setup:
 				break;
 		}     
         D0_STATUS = 0;    
+	}
+	else if( us & bUX_IF_D1_TRANS )
+	{
+		if( D1_STATUS & bUXS_SETUP_ACT )
+		{
+			goto handle_d1_ep0_setup;
+		}
+
+		switch( D1_STATUS & ( MASK_UXS_TOKEN | MASK_UXS_ENDP ) )     
+		{
+			case UXS_TOKEN_IN | 0:
+				switch( D1SetupReqCode ) 
+				{
+					case USB_GET_DESCRIPTOR:
+					{
+						UINT8 i;
+						len = D1SetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : D1SetupLen;
+						for( i = 0; i < len; i++ ) {
+							pD1_EP0_BUF[i] = pD1Descr[i];
+						}
+						D1SetupLen -= len;
+						pD1Descr   += len;
+						D1_EP0T_L   = len;
+						D1_EP0RES  ^= bUEP_T_TOG;
+						break;
+					}
+					case USB_SET_ADDRESS:
+						D1_ADDR = D1SetupLen;
+						D1_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+						break;
+					default:
+						D1_EP0T_L = 0;  
+						D1_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+						break;
+				}
+				break;
+
+			case UXS_TOKEN_OUT | 0:  
+				switch( D1SetupReqCode ) 
+				{
+					case HID_SET_REPORT: 
+						D1_EP0RES ^= bUEP_R_TOG;                      
+						break;
+					case USB_GET_DESCRIPTOR:
+					default:
+						D1_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;  
+						break;
+				}
+				break;
+			
+			default:
+handle_d1_ep0_setup:
+					len = 0;
+					D1_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+					D1SetupLen = pD1_SETUP_REQ->wLengthL + ( (UINT16)pD1_SETUP_REQ->wLengthH << 8 );
+					D1SetupReqCode = pD1_SETUP_REQ->bRequest;
+					
+					if( ( pD1_SETUP_REQ->bRequestType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_STANDARD )
+					{ 
+						switch( D1SetupReqCode ) 
+						{  
+							case USB_GET_DESCRIPTOR:            
+								switch( pD1_SETUP_REQ->wValueH )
+								{
+									case USB_DESCR_TYP_DEVICE:  
+										pD1Descr = (PUINT8C)( &DeviceDescriptor );
+										len = sizeof( USB_Descriptor_Device_t );
+										break;
+									case USB_DESCR_TYP_STRING:  
+										switch( pD1_SETUP_REQ->wValueL ) 
+										{
+											case 1: pD1Descr = (PUINT8C)( RawManufacturerString ); len = RawManufacturerString[0]; break;
+											case 2: pD1Descr = (PUINT8C)( RawProductString ); len = RawProductString[0]; break;
+											case 0: pD1Descr = (PUINT8C)( &LanguageString ); len = LanguageString.Header.Size; break;
+											default: len = 0xFFFF; break;
+										}
+										break;
+									case USB_DESCR_TYP_CONFIG:
+#ifdef SHARED_EP_ENABLE
+										pD1Descr = (PUINT8C)( &ConfigurationDescriptor_D1 );
+										len = sizeof( USB_Descriptor_Configuration_D1_t );
+#else
+										len = 0xFFFF;
+#endif
+										break;
+									case USB_DESCR_TYP_HID:
+										if ( pD1_SETUP_REQ->wIndexL == 0 ) {
+#ifdef SHARED_EP_ENABLE
+											pD1Descr = (PUINT8C)( &ConfigurationDescriptor_D1.Shared_HID );
+											len = sizeof(USB_HID_Descriptor_HID_t);
+#else
+											len = 0xFFFF;
+#endif
+										} else {
+											len = 0xFFFF;
+										}
+										break;
+									case USB_DESCR_TYP_REPORT:
+										if ( pD1_SETUP_REQ->wIndexL == 0 ) {
+#ifdef SHARED_EP_ENABLE
+											pD1Descr = (PUINT8C)( SharedReport );
+											len = SharedReport_size;
+#else
+											len = 0xFFFF;
+#endif
+										} else {
+											len = 0xFFFF;
+										}
+										break;
+									default:
+										len = 0xFFFF;
+										break;
+								} 
+								if( len != 0xFFFF )
+								{
+									UINT8 i;
+									if( D1SetupLen > len ) D1SetupLen = len;
+									len = D1SetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : D1SetupLen;
+									D1SetupLen -= len;
+									for( i = 0; i < len; i++ ) pD1_EP0_BUF[i] = pD1Descr[i];
+									pD1Descr += len;
+								}
+								break;
+							case USB_SET_ADDRESS:               
+								D1SetupLen = pD1_SETUP_REQ->wValueL;
+								break;
+							case USB_GET_CONFIGURATION:
+								pD1_EP0_BUF[ 0 ] = D1UsbConfig;
+								if( D1SetupLen >= 1 ) len = 1;
+								break; 
+							case USB_SET_CONFIGURATION:
+								D1UsbConfig = pD1_SETUP_REQ->wValueL;
+								break;			
+							default:
+								len = 0xFFFF;  
+								break;
+						}
+					}
+					else if( ( pD1_SETUP_REQ->bRequestType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_CLASS )
+					{
+						switch( D1SetupReqCode ) 
+						{
+							case DEF_USB_GET_IDLE:
+								if( D1SetupLen >= 1 ) len = 1;
+								pD1_EP0_BUF[ 0 ] = 0; 
+								break;
+							case DEF_USB_SET_IDLE:                 
+							case DEF_USB_SET_PROTOCOL:                 
+								len = 0;
+								break;
+							default:
+								len = 0xFFFF;  
+								break;
+						}
+					}
+					else
+					{
+						len = 0xFFFF;
+					}															
+
+					if( len == 0xFFFF )
+					{
+						D1SetupReqCode = 0xFF;
+						// temporary until ConfigurationDescriptor_D1 exists (to prevent instant fatal enumeration failure)
+						D1_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_NAK;
+					}
+					else if( len <= DEF_ENDP0_SIZE )
+					{
+						D1_EP0T_L = len;
+						D1_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+					}
+					else
+					{
+						D1_EP0T_L = 0;
+						D1_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+					}
+					break;
+		}
+		D1_STATUS = 0;
+	}
+	else if( us & bUX_IF_D2_TRANS )
+	{
+		if( D2_STATUS & bUXS_SETUP_ACT )
+		{
+			goto handle_d2_ep0_setup;
+		}
+
+		switch( D2_STATUS & ( MASK_UXS_TOKEN | MASK_UXS_ENDP ) )     
+		{
+			case UXS_TOKEN_IN | 0:
+				switch( D2SetupReqCode ) 
+				{
+					case USB_GET_DESCRIPTOR:
+					{
+						UINT8 i;
+						len = D2SetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : D2SetupLen;
+						for( i = 0; i < len; i++ ) {
+							pD2_EP0_BUF[i] = pD2Descr[i];
+						}
+						D2SetupLen -= len;
+						pD2Descr   += len;
+						D2_EP0T_L   = len;
+						D2_EP0RES  ^= bUEP_T_TOG;
+						break;
+					}
+					case USB_SET_ADDRESS:
+						D2_ADDR = D2SetupLen;
+						D2_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+						break;
+					default:
+						D2_EP0T_L = 0;  
+						D2_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+						break;
+				}
+				break;
+
+			case UXS_TOKEN_OUT | 0:  
+				switch( D2SetupReqCode ) 
+				{
+					case HID_SET_REPORT: 
+						D2_EP0RES ^= bUEP_R_TOG;                      
+						break;
+					case USB_GET_DESCRIPTOR:
+					default:
+						D2_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;  
+						break;
+				}
+				break;
+			
+			default:
+handle_d2_ep0_setup:
+					len = 0;
+					D2_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+					D2SetupLen = pD2_SETUP_REQ->wLengthL + ( (UINT16)pD2_SETUP_REQ->wLengthH << 8 );
+					D2SetupReqCode = pD2_SETUP_REQ->bRequest;
+					
+					if( ( pD2_SETUP_REQ->bRequestType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_STANDARD )
+					{ 
+						switch( D2SetupReqCode ) 
+						{  
+							case USB_GET_DESCRIPTOR:            
+								switch( pD2_SETUP_REQ->wValueH )
+								{
+									case USB_DESCR_TYP_DEVICE:  
+										pD2Descr = (PUINT8C)( &DeviceDescriptor );
+										len = sizeof( USB_Descriptor_Device_t );
+										break;
+									case USB_DESCR_TYP_STRING:  
+										switch( pD2_SETUP_REQ->wValueL ) 
+										{
+											case 1: pD2Descr = (PUINT8C)( RawManufacturerString ); len = RawManufacturerString[0]; break;
+											case 2: pD2Descr = (PUINT8C)( RawProductString ); len = RawProductString[0]; break;
+											case 0: pD2Descr = (PUINT8C)( &LanguageString ); len = LanguageString.Header.Size; break;
+											default: len = 0xFFFF; break;
+										}
+										break;
+									case USB_DESCR_TYP_CONFIG:
+#if defined(RAW_ENABLE) || defined(CONSOLE_ENABLE)
+										pD2Descr = (PUINT8C)( &ConfigurationDescriptor_D2 );
+										len = sizeof( USB_Descriptor_Configuration_D2_t );
+#else
+										len = 0xFFFF;
+#endif
+										break;
+									case USB_DESCR_TYP_HID:
+										switch ( pD2_SETUP_REQ->wIndexL ) {
+#ifdef RAW_ENABLE
+											case D2_RAW_INTERFACE_NUM:
+												pD2Descr = (PUINT8C)( &ConfigurationDescriptor_D2.Raw_HID );
+												len = sizeof(USB_HID_Descriptor_HID_t);
+												break;
+#endif
+#ifdef CONSOLE_ENABLE
+											case D2_CONSOLE_INTERFACE_NUM:
+												pD2Descr = (PUINT8C)( &ConfigurationDescriptor_D2.Console_HID );
+												len = sizeof(USB_HID_Descriptor_HID_t);
+												break;
+#endif
+											default:
+												len = 0xFFFF;
+												break;
+										}
+										break;
+									case USB_DESCR_TYP_REPORT:
+										switch ( pD2_SETUP_REQ->wIndexL ) {
+#ifdef RAW_ENABLE
+											case D2_RAW_INTERFACE_NUM:
+												pD2Descr = (PUINT8C)( RawReport );
+												len = RawReport_size;
+												break;
+#endif
+#ifdef CONSOLE_ENABLE
+											case D2_CONSOLE_INTERFACE_NUM:
+												pD2Descr = (PUINT8C)( ConsoleReport );
+												len = ConsoleReport_size;
+												break;
+#endif
+											default:
+												len = 0xFFFF;
+												break;
+										}
+										break;
+									default:
+										len = 0xFFFF;
+										break;
+								} 
+								if( len != 0xFFFF )
+								{
+									UINT8 i;
+									if( D2SetupLen > len ) D2SetupLen = len;
+									len = D2SetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : D2SetupLen;
+									D2SetupLen -= len;
+									for( i = 0; i < len; i++ ) pD2_EP0_BUF[i] = pD2Descr[i];
+									pD2Descr += len;
+								}
+								break;
+							case USB_SET_ADDRESS:               
+								D2SetupLen = pD2_SETUP_REQ->wValueL;
+								break;
+							case USB_GET_CONFIGURATION:
+								pD2_EP0_BUF[ 0 ] = D2UsbConfig;
+								if( D2SetupLen >= 1 ) len = 1;
+								break; 
+							case USB_SET_CONFIGURATION:
+								D2UsbConfig = pD2_SETUP_REQ->wValueL;
+								break;			
+							default:
+								len = 0xFFFF;  
+								break;
+						}
+					}
+					else if( ( pD2_SETUP_REQ->bRequestType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_CLASS )
+					{
+						switch( D2SetupReqCode ) 
+						{
+							case DEF_USB_GET_IDLE:
+								if( D2SetupLen >= 1 ) len = 1;
+								pD2_EP0_BUF[ 0 ] = 0;
+								break;
+							case DEF_USB_SET_IDLE:                 
+							case DEF_USB_SET_PROTOCOL:                 
+								len = 0;
+								break;
+							default:
+								len = 0xFFFF;  
+								break;
+						}
+					}
+					else
+					{
+						len = 0xFFFF;
+					}															
+
+					if( len == 0xFFFF )
+					{
+						D2SetupReqCode = 0xFF;
+						// temporary until ConfigurationDescriptor_D2 exists (to prevent instant fatal enumeration failure)
+						D2_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_NAK;
+					}
+					else if ( len <= DEF_ENDP0_SIZE )
+					{
+						D2_EP0T_L = len;
+						D2_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+					}
+					else
+					{
+						D2_EP0T_L = 0;
+						D2_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+					}
+					break;
+		}
+		D2_STATUS = 0;
 	}
 	else if( us & bUX_IF_SUSPEND )
     {

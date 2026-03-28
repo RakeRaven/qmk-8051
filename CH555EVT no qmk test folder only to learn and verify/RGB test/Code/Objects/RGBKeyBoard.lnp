@@ -1,9 +1,0 @@
-".\Objects\main.obj",
-".\Objects\usb.obj",
-".\Objects\DEBUG.obj",
-".\Objects\rgbled.obj",
-".\Objects\RGBLOAD.obj" 
-TO ".\Objects\RGBKeyBoard" 
-PRINT(".\Listings\RGBKeyBoard.m51") IXREF 
-RAMSIZE(256) 
-DISABLEWARNING (15) 

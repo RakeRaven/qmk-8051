@@ -481,6 +481,77 @@ const USB_Descriptor_Device_t PROGMEM DeviceDescriptor = {
     .NumberOfConfigurations     = FIXED_NUM_CONFIGURATIONS
 };
 
+/*
+ * Hub Descriptors
+ */
+const USB_Descriptor_Device_t PROGMEM HubDeviceDescriptor = {
+    .Header = {
+        .Size                   = sizeof(USB_Descriptor_Device_t),
+        .Type                   = DTYPE_Device
+    },
+    .USBSpecification           = VERSION_BCD(2, 0, 0),
+    .Class                      = 0x09, // Hub Class
+    .SubClass                   = 0x00,
+    .Protocol                   = 0x00, // Full-Speed Hub
+    .Endpoint0Size              = FIXED_CONTROL_ENDPOINT_SIZE,
+    .VendorID                   = VENDOR_ID,
+    .ProductID                  = PRODUCT_ID,
+    .ReleaseNumber              = DEVICE_VER,
+    .ManufacturerStrIndex       = 0x01,
+    .ProductStrIndex            = 0x02,
+    .SerialNumStrIndex          = 0x00,
+    .NumberOfConfigurations     = 1
+};
+
+const USB_Descriptor_Hub_Configuration_t PROGMEM HubConfigurationDescriptor = {
+    .Config = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Configuration_Header_t),
+            .Type               = DTYPE_Configuration
+        },
+        .TotalConfigurationSize = sizeof(USB_Descriptor_Hub_Configuration_t),
+        .TotalInterfaces        = 1,
+        .ConfigurationNumber    = 1,
+        .ConfigurationStrIndex  = NO_DESCRIPTOR,
+        .ConfigAttributes       = (USB_CONFIG_ATTR_RESERVED | USB_CONFIG_ATTR_REMOTEWAKEUP),
+        .MaxPowerConsumption    = USB_CONFIG_POWER_MA(100)
+    },
+    .Hub_Interface = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Interface_t),
+            .Type               = DTYPE_Interface
+        },
+        .InterfaceNumber        = 0,
+        .AlternateSetting       = 0x00,
+        .TotalEndpoints         = 1,
+        .Class                  = 0x09, // Hub
+        .SubClass               = 0x00,
+        .Protocol               = 0x00,
+        .InterfaceStrIndex      = NO_DESCRIPTOR
+    },
+    .Hub_INEndpoint = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Endpoint_t),
+            .Type               = DTYPE_Endpoint
+        },
+        .EndpointAddress        = (ENDPOINT_DIR_IN | 1), // Hub typically uses EP1 IN for port status interrupts
+        .Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+        .EndpointSize           = 1, // 1 byte is enough for 3 ports
+        .PollingIntervalMS      = 0xFF // 255 ms polling
+    }
+};
+
+const USB_Descriptor_Hub_t PROGMEM HubDescriptor = {
+    .bDescLength          = sizeof(USB_Descriptor_Hub_t), // 9
+    .bDescriptorType      = 0x29,                         // Hub descriptor type
+    .bNbrPorts            = 3,                            // 3 downstream ports
+    .wHubCharacteristics  = 0x0000,                       // Ganged power, global over-current
+    .bPwrOn2PwrGood       = 0x32,                         // 50 * 2 ms = 100 ms
+    .bHubContrCurrent     = 0x64,                         // 100 mA
+    .DeviceRemovable      = 0x00,                         // All ports removable
+    .PortPwrCtrlMask      = 0xFF                          // Legacy dummy mapping
+};
+
 #ifndef USB_MAX_POWER_CONSUMPTION
 #    define USB_MAX_POWER_CONSUMPTION 500
 #endif
@@ -1065,6 +1136,197 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
     },
 #endif
 };
+
+/*
+ * D1 Sub-Device Configuration Descriptor (NKRO / Shared Interfaces)
+ */
+#ifdef SHARED_EP_ENABLE
+const USB_Descriptor_Configuration_D1_t PROGMEM ConfigurationDescriptor_D1 = {
+    .Config = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Configuration_Header_t),
+            .Type               = DTYPE_Configuration
+        },
+        .TotalConfigurationSize = sizeof(USB_Descriptor_Configuration_D1_t),
+        .TotalInterfaces        = 1, // D1 uniquely exposes 1 interface (Shared)
+        .ConfigurationNumber    = 1,
+        .ConfigurationStrIndex  = NO_DESCRIPTOR,
+        .ConfigAttributes       = (USB_CONFIG_ATTR_RESERVED | USB_CONFIG_ATTR_REMOTEWAKEUP),
+        .MaxPowerConsumption    = USB_CONFIG_POWER_MA(100)
+    },
+    /*
+     * Shared (NKRO/Mouse/System)
+     */
+    .Shared_Interface = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Interface_t),
+            .Type               = DTYPE_Interface
+        },
+        .InterfaceNumber        = 0, // MUST be 0 since this is the first interface of a logically separate USB device (D1)
+        .AlternateSetting       = 0x00,
+        .TotalEndpoints         = 1,
+        .Class                  = HID_CSCP_HIDClass,
+        .SubClass               = HID_CSCP_NonBootSubclass,
+        .Protocol               = HID_CSCP_NonBootProtocol,
+        .InterfaceStrIndex      = NO_DESCRIPTOR
+    },
+    .Shared_HID = {
+        .Header = {
+            .Size               = sizeof(USB_HID_Descriptor_HID_t),
+            .Type               = HID_DTYPE_HID
+        },
+        .HIDSpec                = VERSION_BCD(1, 1, 1),
+        .CountryCode            = 0x00,
+        .TotalReportDescriptors = 1,
+        .HIDReportType          = HID_DTYPE_Report,
+        .HIDReportLength        = sizeof(SharedReport)
+    },
+    .Shared_INEndpoint = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Endpoint_t),
+            .Type               = DTYPE_Endpoint
+        },
+        .EndpointAddress        = (ENDPOINT_DIR_IN | 1), // USBD1 utilizes sub-device EP1 natively
+        .Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+        .EndpointSize           = SHARED_EPSIZE,
+        .PollingIntervalMS      = USB_POLLING_INTERVAL_MS
+    }
+};
+#endif
+
+/*
+ * D2 Sub-Device Configuration Descriptor (Raw / Console Interfaces)
+ */
+#if defined(RAW_ENABLE) || defined(CONSOLE_ENABLE)
+
+// Statically map D2 interfaces so they securely start from 0
+#ifdef RAW_ENABLE
+  #define D2_RAW_INTERFACE_NUM 0
+  #define D2_RAW_EPNUM         1
+  #ifdef CONSOLE_ENABLE
+    #define D2_CONSOLE_INTERFACE_NUM 1
+    #define D2_CONSOLE_EPNUM         2
+    #define D2_TOTAL_INTERFACES      2
+  #else
+    #define D2_TOTAL_INTERFACES      1
+  #endif
+#else
+  #ifdef CONSOLE_ENABLE
+    #define D2_CONSOLE_INTERFACE_NUM 0
+    #define D2_CONSOLE_EPNUM         1
+    #define D2_TOTAL_INTERFACES      1
+  #endif
+#endif
+
+const USB_Descriptor_Configuration_D2_t PROGMEM ConfigurationDescriptor_D2 = {
+    .Config = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Configuration_Header_t),
+            .Type               = DTYPE_Configuration
+        },
+        .TotalConfigurationSize = sizeof(USB_Descriptor_Configuration_D2_t),
+        .TotalInterfaces        = D2_TOTAL_INTERFACES,
+        .ConfigurationNumber    = 1,
+        .ConfigurationStrIndex  = NO_DESCRIPTOR,
+        .ConfigAttributes       = (USB_CONFIG_ATTR_RESERVED | USB_CONFIG_ATTR_REMOTEWAKEUP),
+        .MaxPowerConsumption    = USB_CONFIG_POWER_MA(100)
+    },
+
+#ifdef RAW_ENABLE
+    .Raw_Interface = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Interface_t),
+            .Type               = DTYPE_Interface
+        },
+        .InterfaceNumber        = D2_RAW_INTERFACE_NUM,
+        .AlternateSetting       = 0x00,
+        .TotalEndpoints         = 2,
+        .Class                  = HID_CSCP_HIDClass,
+        .SubClass               = HID_CSCP_NonBootSubclass,
+        .Protocol               = HID_CSCP_NonBootProtocol,
+        .InterfaceStrIndex      = NO_DESCRIPTOR
+    },
+    .Raw_HID = {
+        .Header = {
+            .Size               = sizeof(USB_HID_Descriptor_HID_t),
+            .Type               = HID_DTYPE_HID
+        },
+        .HIDSpec                = VERSION_BCD(1, 1, 1),
+        .CountryCode            = 0x00,
+        .TotalReportDescriptors = 1,
+        .HIDReportType          = HID_DTYPE_Report,
+        .HIDReportLength        = sizeof(RawReport)
+    },
+    .Raw_INEndpoint = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Endpoint_t),
+            .Type               = DTYPE_Endpoint
+        },
+        .EndpointAddress        = (ENDPOINT_DIR_IN | D2_RAW_EPNUM), 
+        .Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+        .EndpointSize           = RAW_EPSIZE,
+        .PollingIntervalMS      = 0x01
+    },
+    .Raw_OUTEndpoint = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Endpoint_t),
+            .Type               = DTYPE_Endpoint
+        },
+        .EndpointAddress        = (ENDPOINT_DIR_OUT | D2_RAW_EPNUM), 
+        .Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+        .EndpointSize           = RAW_EPSIZE,
+        .PollingIntervalMS      = 0x01
+    },
+#endif
+
+#ifdef CONSOLE_ENABLE
+    .Console_Interface  = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Interface_t),
+            .Type               = DTYPE_Interface
+        },
+        .InterfaceNumber        = D2_CONSOLE_INTERFACE_NUM,
+        .AlternateSetting       = 0x00,
+        .TotalEndpoints         = 2,
+        .Class                  = HID_CSCP_HIDClass,
+        .SubClass               = HID_CSCP_NonBootSubclass,
+        .Protocol               = HID_CSCP_NonBootProtocol,
+        .InterfaceStrIndex      = NO_DESCRIPTOR
+    },
+    .Console_HID = {
+        .Header = {
+            .Size               = sizeof(USB_HID_Descriptor_HID_t),
+            .Type               = HID_DTYPE_HID
+        },
+        .HIDSpec                = VERSION_BCD(1, 1, 1),
+        .CountryCode            = 0x00,
+        .TotalReportDescriptors = 1,
+        .HIDReportType          = HID_DTYPE_Report,
+        .HIDReportLength        = sizeof(ConsoleReport)
+    },
+    .Console_INEndpoint = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Endpoint_t),
+            .Type               = DTYPE_Endpoint
+        },
+        .EndpointAddress        = (ENDPOINT_DIR_IN | D2_CONSOLE_EPNUM),
+        .Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+        .EndpointSize           = CONSOLE_EPSIZE,
+        .PollingIntervalMS      = 0x01
+    },
+    .Console_OUTEndpoint = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Endpoint_t),
+            .Type               = DTYPE_Endpoint
+        },
+        .EndpointAddress        = (ENDPOINT_DIR_OUT | D2_CONSOLE_EPNUM),
+        .Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+        .EndpointSize           = CONSOLE_EPSIZE,
+        .PollingIntervalMS      = 0x01
+    }
+#endif
+};
+#endif
 
 /*
  * String descriptors
