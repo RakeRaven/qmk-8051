@@ -113,7 +113,8 @@ user_song_list.h
 compile_commands.json
 .clangd/
 .cache/
-claude.md 
+claude.md
+claude/
 
 
 # Personal logs and captures

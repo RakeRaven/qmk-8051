@@ -336,10 +336,17 @@ handle_hb_ep0_setup:
 							break;
 							
 						case 0x00: // GetStatus (Hub or Port status)
-							pHB_EP0_BUF[0] = 0x00;
-							pHB_EP0_BUF[1] = 0x00;
+							if( pHB_SETUP_REQ->bRequestType == 0xA3 ) {
+								// Port status: Connected + Enabled + Powered
+								pHB_EP0_BUF[0] = 0x03; // PORT_CONNECTION | PORT_ENABLE
+								pHB_EP0_BUF[1] = 0x01; // PORT_POWER
+							} else {
+								// Hub status: all zeros (no local power issue, no overcurrent)
+								pHB_EP0_BUF[0] = 0x00;
+								pHB_EP0_BUF[1] = 0x00;
+							}
 							pHB_EP0_BUF[2] = 0x00;
-							pHB_EP0_BUF[3] = 0x00; // Stub with zeros for now so Host doesn't hang
+							pHB_EP0_BUF[3] = 0x00;
 							len = 4;
 							if( HBSetupLen > len ) HBSetupLen = len;
 							len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
@@ -404,8 +411,10 @@ handle_hb_ep0_setup:
 					len = 0xFFFF;
 				}
 
-				if (len == 0xFFFF)
+				if (len == 0xFFFF) {
+					HBSetupReqCode = 0xFF;
 					HB_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;
+				}
 				else
 					HB_EP0T_L = len;
 				break;
