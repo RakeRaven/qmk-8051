@@ -70,6 +70,7 @@ typedef struct {
     USB_Descriptor_Endpoint_t  Shared_INEndpoint;
 #endif
 
+#ifndef QMK_MCU_CH555
 #ifdef RAW_ENABLE
     // Raw HID Interface
     USB_Descriptor_Interface_t Raw_Interface;
@@ -77,6 +78,7 @@ typedef struct {
     USB_Descriptor_Endpoint_t  Raw_INEndpoint;
     USB_Descriptor_Endpoint_t  Raw_OUTEndpoint;
 #endif
+#endif /* !QMK_MCU_CH555 */
 
 #if defined(MOUSE_ENABLE) && !defined(MOUSE_SHARED_EP)
     // Mouse HID Interface
@@ -85,6 +87,7 @@ typedef struct {
     USB_Descriptor_Endpoint_t  Mouse_INEndpoint;
 #endif
 
+#ifndef QMK_MCU_CH555
 #if defined(SHARED_EP_ENABLE) && !defined(KEYBOARD_SHARED_EP)
     // Shared Interface
     USB_Descriptor_Interface_t Shared_Interface;
@@ -99,6 +102,7 @@ typedef struct {
     USB_Descriptor_Endpoint_t  Console_INEndpoint;
     USB_Descriptor_Endpoint_t  Console_OUTEndpoint;
 #endif
+#endif /* !QMK_MCU_CH555 */
 
 #ifdef MIDI_ENABLE
     USB_Descriptor_Interface_Association_t Audio_Interface_Association;

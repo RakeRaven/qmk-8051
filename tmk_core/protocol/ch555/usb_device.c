@@ -94,6 +94,9 @@ volatile UINT8  ep3_data_wait   = 0x00;											/* endpoint 3 data waiting fla
 #ifdef USE_D0_EP4_OUT
 volatile UINT8  ep4_data_wait   = 0x00;											/* endpoint 4 data waiting flag*/
 #endif
+#ifdef USE_D2_EP2_OUT
+volatile UINT8  ep_d2ep2_data_wait = 0x00;										/* D2 endpoint 2 OUT data waiting flag */
+#endif
 
 //UINT8D  RGB_Mode = 0x00;
 void USB_EP_init( void )  
@@ -143,6 +146,17 @@ void USB_EP_init( void )
     D0_EP4RES = bUEP_X_AUTO_TOG | UEP_X_RES_ACK; 
 #endif
 
+#ifdef USE_D1_EP1_IN
+    D1_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;
+#endif
+#ifdef USE_D2_EP1_IN
+    D2_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;
+#endif
+#ifdef USE_D2_EP2_OUT
+    D2_EP_MOD |= bUX_EP2O_EN;
+    D2_EP2RES = bUEP_X_AUTO_TOG | UEP_X_RES_ACK;
+#endif
+
     /* Clear all endpoint transmit lengths */
     HB_EP0T_L = 0;
     HB_EP1T_L = 0;
@@ -163,6 +177,12 @@ void USB_EP_init( void )
 #endif
 #ifdef USE_D0_EP6_IN
     D0_EP6T_L = 0;
+#endif
+#ifdef USE_D1_EP1_IN
+    D1_EP1T_L = 0;
+#endif
+#ifdef USE_D2_EP1_IN
+    D2_EP1T_L = 0;
 #endif
 }
 /*******************************************************************************
@@ -200,7 +220,10 @@ void USB_Device_Init( void )
 	ep3_data_wait   = 0x00;														/* Usb keyboard and mouse upload status */
 #endif
 #ifdef USE_D0_EP4_OUT
-	ep4_data_wait   = 0x00;														/* Usb keyboard and mouse upload status */
+	ep4_data_wait   = 0x00;
+#endif
+#ifdef USE_D2_EP2_OUT
+	ep_d2ep2_data_wait = 0x00;
 #endif
 	KB_USB_SetReport = 0x00;													/* Usb keyboard set report value */  
 
@@ -651,28 +674,30 @@ handle_ep0_setup:
                     							break;
 #endif
 
-											//case 2:
+	#ifndef QMK_MCU_CH555
+										//case 2:
 #ifdef SHARED_EP_ENABLE
 											case SHARED_INTERFACE:
-												pD0Descr = (PUINT8C)( &ConfigurationDescriptor.Shared_HID );        
+												pD0Descr = (PUINT8C)( &ConfigurationDescriptor.Shared_HID );
 												len = 9;
-												break;			
+												break;
 #endif
-												
+
 											//case 1:
 #ifdef RAW_ENABLE
 											case RAW_INTERFACE:
-												pD0Descr = (PUINT8C)( &ConfigurationDescriptor.Raw_HID );        
+												pD0Descr = (PUINT8C)( &ConfigurationDescriptor.Raw_HID );
 												len = sizeof(USB_HID_Descriptor_HID_t);
-												break;			
+												break;
 #endif
-												
+
 #ifdef CONSOLE_ENABLE
                 case CONSOLE_INTERFACE:
                     pD0Descr = &ConfigurationDescriptor.Console_HID;
                     len    = sizeof(USB_HID_Descriptor_HID_t);
                     break;
 #endif
+#endif /* !QMK_MCU_CH555 */
 #if defined(JOYSTICK_ENABLE) && !defined(JOYSTICK_SHARED_EP)
                 case JOYSTICK_INTERFACE:
                     pD0Descr = &ConfigurationDescriptor.Joystick_HID;
@@ -712,28 +737,30 @@ handle_ep0_setup:
                                                 break;
 #endif
 
+#ifndef QMK_MCU_CH555
 											//case 2:
 #ifdef SHARED_EP_ENABLE
 											case SHARED_INTERFACE:
-												pD0Descr = (PUINT8C)( SharedReport );        
+												pD0Descr = (PUINT8C)( SharedReport );
 												len = SharedReport_size;
-												break;			
+												break;
 #endif
-												
+
 											//case 1:
 #ifdef RAW_ENABLE
 											case RAW_INTERFACE:
-												pD0Descr = (PUINT8C)( RawReport );        
+												pD0Descr = (PUINT8C)( RawReport );
 												len = RawReport_size;
-												break;			
+												break;
 #endif
-												
+
 #ifdef CONSOLE_ENABLE
                                             case CONSOLE_INTERFACE:
                                                 pD0Descr = (PUINT8C) ConsoleReport;
                                                 len    = ConsoleReport_size;
                                                 break;
 #endif
+#endif /* !QMK_MCU_CH555 */
 #if defined(JOYSTICK_ENABLE) && !defined(JOYSTICK_SHARED_EP)
                                             case JOYSTICK_INTERFACE:
                                                 pD0Descr = (PUINT8C) JoystickReport;
@@ -1192,8 +1219,15 @@ handle_ep0_setup:
 
 		switch( D1_STATUS & ( MASK_UXS_TOKEN | MASK_UXS_ENDP ) )     
 		{
+#ifdef USE_D1_EP1_IN
+			case UXS_TOKEN_IN | 1:
+				/* D1 EP1 IN: NKRO report sent, pause until next report */
+				D1_EP1RES = D1_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK;
+				break;
+#endif
+
 			case UXS_TOKEN_IN | 0:
-				switch( D1SetupReqCode ) 
+				switch( D1SetupReqCode )
 				{
 					case USB_GET_DESCRIPTOR:
 					{
@@ -1345,8 +1379,7 @@ handle_d1_ep0_setup:
 					if( len == 0xFFFF )
 					{
 						D1SetupReqCode = 0xFF;
-						// temporary until ConfigurationDescriptor_D1 exists (to prevent instant fatal enumeration failure)
-						D1_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_NAK;
+						D1_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;
 					}
 					else if( len <= DEF_ENDP0_SIZE )
 					{
@@ -1371,8 +1404,23 @@ handle_d1_ep0_setup:
 
 		switch( D2_STATUS & ( MASK_UXS_TOKEN | MASK_UXS_ENDP ) )     
 		{
+#ifdef USE_D2_EP1_IN
+			case UXS_TOKEN_IN | 1:
+				/* D2 EP1 IN: RAW HID report sent, pause until next */
+				D2_EP1RES = D2_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK;
+				break;
+#endif
+#ifdef USE_D2_EP2_OUT
+			case UXS_TOKEN_OUT | 2:
+				/* D2 EP2 OUT: RAW HID data received from host */
+				if( D2_STATUS & bUXS_TOG_OK )
+					D2_EP2RES = D2_EP2RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK;
+				ep_d2ep2_data_wait = 0x01;
+				break;
+#endif
+
 			case UXS_TOKEN_IN | 0:
-				switch( D2SetupReqCode ) 
+				switch( D2SetupReqCode )
 				{
 					case USB_GET_DESCRIPTOR:
 					{
@@ -1538,8 +1586,7 @@ handle_d2_ep0_setup:
 					if( len == 0xFFFF )
 					{
 						D2SetupReqCode = 0xFF;
-						// temporary until ConfigurationDescriptor_D2 exists (to prevent instant fatal enumeration failure)
-						D2_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_NAK;
+						D2_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;
 					}
 					else if ( len <= DEF_ENDP0_SIZE )
 					{
@@ -1625,6 +1672,9 @@ handle_d2_ep0_setup:
 #endif
 #ifdef USE_D0_EP4_OUT
 		ep4_data_wait = 0x00;
+#endif
+#ifdef USE_D2_EP2_OUT
+		ep_d2ep2_data_wait = 0x00;
 #endif
 
         USB_IF = bUX_IF_BUS_RST;

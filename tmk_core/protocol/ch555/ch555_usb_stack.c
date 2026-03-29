@@ -115,21 +115,30 @@ void send_report_EP1(void *report, size_t size) {
 #ifdef USE_D0_EP2_IN
 void send_report_EP2(void *report, size_t size) {
     if (!USB_EnumStatus) return;
-	if( USB_SleepStatus == 0x03 )
-	{
-		USB_WakeUp_PC( );
-	}
-
-    // Check if write ready for a polling interval around 10ms 
+	if( USB_SleepStatus == 0x03 ) USB_WakeUp_PC( );
     uint8_t timeout = 255;
     while (timeout-- && ( ( D0_EP2RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK )) {
         wait_us(40);
     }
     if ( ( D0_EP2RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK ) return;
-	
 	memcpy( pUSB_BUF_DEV0 + UX_EP2_ADDR, (uint8_t *)report, size );
-	D0_EP2T_L = size;                                       
-	D0_EP2RES = D0_EP2RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
+	D0_EP2T_L = size;
+	D0_EP2RES = D0_EP2RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;
+}
+#endif
+#ifdef USE_D1_EP1_IN
+void send_report_EP2(void *report, size_t size) {
+    // NKRO → D1 EP1 IN
+    if (!USB_EnumStatus) return;
+	if( USB_SleepStatus == 0x03 ) USB_WakeUp_PC( );
+    uint8_t timeout = 255;
+    while (timeout-- && ( ( D1_EP1RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK )) {
+        wait_us(40);
+    }
+    if ( ( D1_EP1RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK ) return;
+	memcpy( pUSB_BUF_DEV1 + UX_EP1_ADDR, (uint8_t *)report, size );
+	D1_EP1T_L = size;
+	D1_EP1RES = D1_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;
 }
 #endif
 #ifdef USE_D0_EP3_IN
@@ -175,21 +184,30 @@ void send_report_EP4(void *report, size_t size) {
 #ifdef USE_D0_EP5_IN
 void send_report_EP5(void *report, size_t size) {
     if (!USB_EnumStatus) return;
-	if( USB_SleepStatus == 0x03 )
-	{
-		USB_WakeUp_PC( );
-	}
-
-    // Check if write ready for a polling interval around 10ms 
+	if( USB_SleepStatus == 0x03 ) USB_WakeUp_PC( );
     uint8_t timeout = 255;
     while (timeout-- && ( ( D0_EP5RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK )) {
         wait_us(40);
     }
     if ( ( D0_EP5RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK ) return;
-	
 	memcpy( pUSB_BUF_DEV0 + UX_EP5_ADDR, (uint8_t *)report, size );
-	D0_EP5T_L = size;                                       
-	D0_EP5RES = D0_EP5RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
+	D0_EP5T_L = size;
+	D0_EP5RES = D0_EP5RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;
+}
+#endif
+#ifdef USE_D2_EP1_IN
+void send_report_EP5(void *report, size_t size) {
+    // RAW HID → D2 EP1 IN
+    if (!USB_EnumStatus) return;
+	if( USB_SleepStatus == 0x03 ) USB_WakeUp_PC( );
+    uint8_t timeout = 255;
+    while (timeout-- && ( ( D2_EP1RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK )) {
+        wait_us(40);
+    }
+    if ( ( D2_EP1RES & MASK_UEP_X_RES ) == UEP_X_RES_ACK ) return;
+	memcpy( pUSB_BUF_DEV2 + UX_EP1_ADDR, (uint8_t *)report, size );
+	D2_EP1T_L = size;
+	D2_EP1RES = D2_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;
 }
 #endif
 
@@ -249,13 +267,25 @@ bool read_EP3(void *report, size_t size) {
 #endif
 #ifdef USE_D0_EP4_OUT
 bool read_EP4(void *report, size_t size) {
-	if ( ep4_data_wait ) {                 
+	if ( ep4_data_wait ) {
         ep4_data_wait = 0;
 	    memcpy( report, pUSB_BUF_DEV0 + UX_EP4_ADDR, size );
-	    D0_EP4RES = D0_EP4RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;               
-        return true; //read data success
+	    D0_EP4RES = D0_EP4RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;
+        return true;
     }
-    return false; //no data
+    return false;
+}
+#endif
+#ifdef USE_D2_EP2_OUT
+bool read_EP4(void *report, size_t size) {
+    // RAW HID receive ← D2 EP2 OUT
+	if ( ep_d2ep2_data_wait ) {
+        ep_d2ep2_data_wait = 0;
+	    memcpy( report, pUSB_BUF_DEV2 + UX_EP2_ADDR, size );
+	    D2_EP2RES = D2_EP2RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;
+        return true;
+    }
+    return false;
 }
 #endif
 
@@ -747,8 +777,10 @@ static void send_keyboard(report_keyboard_t *report) {
     } else {
 #ifdef NKRO_ENABLE
         if (keymap_config.nkro) {
-            //ep   = SHARED_IN_EPNUM;
             size = sizeof(struct nkro_report);
+            send_report(SHARED_IN_EPNUM, report, size);
+            keyboard_report_sent = *report;
+            return;
         }
 #endif
 

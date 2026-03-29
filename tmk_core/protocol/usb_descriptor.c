@@ -570,7 +570,11 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
             .Type               = DTYPE_Configuration
         },
         .TotalConfigurationSize = sizeof(USB_Descriptor_Configuration_t),
+#ifdef QMK_MCU_CH555
+        .TotalInterfaces        = 1, // D0 only: Keyboard
+#else
         .TotalInterfaces        = TOTAL_INTERFACES,
+#endif
         .ConfigurationNumber    = 1,
         .ConfigurationStrIndex  = NO_DESCRIPTOR,
         .ConfigAttributes       = (USB_CONFIG_ATTR_RESERVED | USB_CONFIG_ATTR_REMOTEWAKEUP),
@@ -616,9 +620,9 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
     },
 #endif
 
-#ifdef RAW_ENABLE
+#if defined(RAW_ENABLE) && !defined(QMK_MCU_CH555)
     /*
-     * Raw HID
+     * Raw HID (D0 only on non-CH555; on CH555 this lives on D2)
      */
     .Raw_Interface = {
         .Header = {
@@ -706,9 +710,9 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
     },
 #endif
 
-#ifdef SHARED_EP_ENABLE
+#if defined(SHARED_EP_ENABLE) && !defined(QMK_MCU_CH555)
     /*
-     * Shared
+     * Shared (NKRO/Mouse/System) — on CH555 this lives on D1
      */
     .Shared_Interface = {
         .Header = {
@@ -751,9 +755,9 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
     },
 #endif
 
-#ifdef CONSOLE_ENABLE
+#if defined(CONSOLE_ENABLE) && !defined(QMK_MCU_CH555)
     /*
-     * Console
+     * Console — on CH555 this lives on D2
      */
     .Console_Interface = {
         .Header = {
@@ -1201,11 +1205,12 @@ const USB_Descriptor_Configuration_D1_t PROGMEM ConfigurationDescriptor_D1 = {
 
 // Statically map D2 interfaces so they securely start from 0
 #ifdef RAW_ENABLE
-  #define D2_RAW_INTERFACE_NUM 0
-  #define D2_RAW_EPNUM         1
+  #define D2_RAW_INTERFACE_NUM  0
+  #define D2_RAW_EPNUM          1  // EP1 IN  (device→host)
+  #define D2_RAW_OUT_EPNUM      2  // EP2 OUT (host→device) — D2 EP1 cannot be bidirectional
   #ifdef CONSOLE_ENABLE
     #define D2_CONSOLE_INTERFACE_NUM 1
-    #define D2_CONSOLE_EPNUM         2
+    #define D2_CONSOLE_EPNUM         3  // EP3 if available (note: may not be on D2 hw)
     #define D2_TOTAL_INTERFACES      2
   #else
     #define D2_TOTAL_INTERFACES      1
@@ -1272,7 +1277,7 @@ const USB_Descriptor_Configuration_D2_t PROGMEM ConfigurationDescriptor_D2 = {
             .Size               = sizeof(USB_Descriptor_Endpoint_t),
             .Type               = DTYPE_Endpoint
         },
-        .EndpointAddress        = (ENDPOINT_DIR_OUT | D2_RAW_EPNUM), 
+        .EndpointAddress        = (ENDPOINT_DIR_OUT | D2_RAW_OUT_EPNUM),
         .Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
         .EndpointSize           = RAW_EPSIZE,
         .PollingIntervalMS      = 0x01
@@ -1412,10 +1417,10 @@ const USB_Descriptor_String_t PROGMEM SerialNumberString = {
  * is called so that the descriptor details can be passed back and the appropriate descriptor sent back to the
  * USB host.
  */
-uint16_t get_usb_descriptor(const uint16_t wValue, const uint16_t wIndex, const uint16_t wLength, const void** const DescriptorAddress) {
+uint16_t get_usb_descriptor(const uint16_t wValue, const uint16_t wIndex, const uint16_t wLength, const void **const DescriptorAddress) {
     const uint8_t DescriptorType  = (wValue >> 8);
     const uint8_t DescriptorIndex = (wValue & 0xFF);
-    const void*   Address         = NULL;
+    const void   *Address         = NULL;
     uint16_t      Size            = NO_DESCRIPTOR;
 
     switch (DescriptorType) {
@@ -1476,27 +1481,24 @@ uint16_t get_usb_descriptor(const uint16_t wValue, const uint16_t wIndex, const 
                     break;
 #endif
 
-#ifdef SHARED_EP_ENABLE
+#if defined(SHARED_EP_ENABLE) && !defined(QMK_MCU_CH555)
                 case SHARED_INTERFACE:
                     Address = &ConfigurationDescriptor.Shared_HID;
                     Size    = sizeof(USB_HID_Descriptor_HID_t);
-
                     break;
 #endif
 
-#ifdef RAW_ENABLE
+#if defined(RAW_ENABLE) && !defined(QMK_MCU_CH555)
                 case RAW_INTERFACE:
                     Address = &ConfigurationDescriptor.Raw_HID;
                     Size    = sizeof(USB_HID_Descriptor_HID_t);
-
                     break;
 #endif
 
-#ifdef CONSOLE_ENABLE
+#if defined(CONSOLE_ENABLE) && !defined(QMK_MCU_CH555)
                 case CONSOLE_INTERFACE:
                     Address = &ConfigurationDescriptor.Console_HID;
                     Size    = sizeof(USB_HID_Descriptor_HID_t);
-
                     break;
 #endif
 #if defined(JOYSTICK_ENABLE) && !defined(JOYSTICK_SHARED_EP)
