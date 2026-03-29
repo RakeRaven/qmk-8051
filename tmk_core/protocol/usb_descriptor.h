@@ -450,6 +450,24 @@ extern const USB_Descriptor_Configuration_D1_t PROGMEM ConfigurationDescriptor_D
 
 #if defined(RAW_ENABLE) || defined(CONSOLE_ENABLE)
 extern const USB_Descriptor_Configuration_D2_t PROGMEM ConfigurationDescriptor_D2;
+
+/* D2 interface/endpoint numbering — shared between usb_descriptor.c and usb_device.c */
+#  ifdef RAW_ENABLE
+#    define D2_RAW_INTERFACE_NUM  0
+#    define D2_RAW_EPNUM          1  /* EP1 IN  (device→host) */
+#    define D2_RAW_OUT_EPNUM      2  /* EP2 OUT (host→device) */
+#    ifdef CONSOLE_ENABLE
+#      define D2_CONSOLE_INTERFACE_NUM 1
+#      define D2_CONSOLE_EPNUM         3
+#      define D2_TOTAL_INTERFACES      2
+#    else
+#      define D2_TOTAL_INTERFACES      1
+#    endif
+#  else /* CONSOLE_ENABLE only */
+#    define D2_CONSOLE_INTERFACE_NUM 0
+#    define D2_CONSOLE_EPNUM         1
+#    define D2_TOTAL_INTERFACES      1
+#  endif
 #endif
 
 extern const USB_Descriptor_String_t PROGMEM LanguageString;

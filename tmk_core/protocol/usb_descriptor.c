@@ -1203,26 +1203,6 @@ const USB_Descriptor_Configuration_D1_t PROGMEM ConfigurationDescriptor_D1 = {
  */
 #if defined(RAW_ENABLE) || defined(CONSOLE_ENABLE)
 
-// Statically map D2 interfaces so they securely start from 0
-#ifdef RAW_ENABLE
-  #define D2_RAW_INTERFACE_NUM  0
-  #define D2_RAW_EPNUM          1  // EP1 IN  (device→host)
-  #define D2_RAW_OUT_EPNUM      2  // EP2 OUT (host→device) — D2 EP1 cannot be bidirectional
-  #ifdef CONSOLE_ENABLE
-    #define D2_CONSOLE_INTERFACE_NUM 1
-    #define D2_CONSOLE_EPNUM         3  // EP3 if available (note: may not be on D2 hw)
-    #define D2_TOTAL_INTERFACES      2
-  #else
-    #define D2_TOTAL_INTERFACES      1
-  #endif
-#else
-  #ifdef CONSOLE_ENABLE
-    #define D2_CONSOLE_INTERFACE_NUM 0
-    #define D2_CONSOLE_EPNUM         1
-    #define D2_TOTAL_INTERFACES      1
-  #endif
-#endif
-
 const USB_Descriptor_Configuration_D2_t PROGMEM ConfigurationDescriptor_D2 = {
     .Config = {
         .Header = {
