@@ -23,6 +23,7 @@ volatile PUINT8C	pD0Descr;   /* points into __code Flash — MUST be PUINT8C on 
 // Hub specific EP0 variables
 volatile UINT8	HBSetupReqCode = 0xFF;
 volatile UINT16	HBSetupLen = 0x00;
+volatile UINT8  HBNewAddress = 0x00;
 volatile PUINT8C pHBDescr;
 
 // D1 specific EP0 variables
@@ -121,7 +122,7 @@ volatile UINT8  ep_d2ep2_data_wait = 0x00;										/* D2 endpoint 2 OUT data wa
 void USB_EP_init( void )  
 {
     /* EP0: clear toggle bits to DATA0, ACK for OUT/SETUP, NAK for IN */
-    HB_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+    HB_EP0RES = bUEP_X_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
     HB_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;
 
     D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;  /* toggle bits cleared (DATA0) */
@@ -218,13 +219,15 @@ void USB_Device_Init( void )
 	D0SetupLen = 0x00;															/* USB Setup packet length */
 	HBSetupReqCode = 0xFF;
 	HBSetupLen = 0x00;
-	hub_port_status[0] = HUB_PORT_POWER;
+	/* Port 1 (D0/keyboard) is always physically present — report as connected so
+	 * the host will issue PORT_RESET and enumerate D0.  Ports 2/3 start powered-only. */
+	hub_port_status[0] = HUB_PORT_POWER | HUB_PORT_CONNECTED;
 	hub_port_status[1] = HUB_PORT_POWER;
 	hub_port_status[2] = HUB_PORT_POWER;
-	hub_port_change[0] = 0;
+	hub_port_change[0] = HUB_C_CONNECTION; /* notify host: something connected on port 1 */
 	hub_port_change[1] = 0;
 	hub_port_change[2] = 0;
-	hub_ep1_pending    = 0;
+	hub_ep1_pending    = 0x02;  /* bit 1 = port 1 has a status change pending */
 	D1SetupReqCode = 0xFF;
 	D1SetupLen = 0x00;
 	D1UsbConfig = 0x00;
@@ -266,7 +269,8 @@ void USB_Device_Init( void )
 	GLOBAL_CFG &= ~bWDOG_EN;                 // disable watch-dog reset
 	SAFE_MOD = 0x00;
 
-	USB_CTRL = 0;                            // usb physical config
+	USB_CTRL = bUX_RESET_SIE | bUX_CLR_ALL; // pulse reset — flush SIE and FIFOs
+	USB_CTRL = 0;                            // clear reset
 
     USB_EP_init();                           // setup endpoints
 //	D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
@@ -285,7 +289,7 @@ void USB_Device_Init( void )
 	D2_ADDR = 0;
 	USB_IF = 0xFF;
 	USB_IE = bUX_IE_SUSPEND | bUX_IE_TRANSFER | bUX_IE_BUS_RST;
-   	USB_CTRL = bUX_DP_PU_EN;                 // usb physical config
+   	USB_CTRL = bUX_DP_PU_EN | bUX_INT_BUSY; // pull-up + auto-NAK while ISR runs
 	IE_USB = 1;                              // usb interrupt enable
 }
 
@@ -332,12 +336,12 @@ USB_DevIntNext:
 						HBSetupLen -= len;
 						pHBDescr   += len;
 						HB_EP0T_L   = len;
-						HB_EP0RES  ^= bUEP_T_TOG;
 						break;
 					}
 					case USB_SET_ADDRESS:
-						HB_ADDR = HBSetupLen;
-						HB_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+						HB_ADDR = HBNewAddress;
+						HB_EP0T_L = 0;
+						HB_EP0RES = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
 						break;
 					default:
 						HB_EP0T_L = 0;  
@@ -446,7 +450,6 @@ handle_hb_ep0_setup:
 							if( HBSetupLen > len ) HBSetupLen = len;
 							len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
 							HBSetupLen -= len;
-							HB_EP0T_L = len;
 							break;
 						}
 
@@ -491,12 +494,13 @@ handle_hb_ep0_setup:
 							break;
 
 						case USB_SET_ADDRESS:
-							HBSetupLen = pHB_SETUP_REQ->wValueL;
+							HBNewAddress = pHB_SETUP_REQ->wValueL;
+							len = 0;
 							break;
 
 						case USB_SET_CONFIGURATION:
-							/* Hub configured — arm EP1 IN to NAK (no change pending yet) */
-							HB_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;
+							/* Hub configured — arm EP1 IN; ACK immediately if a port change is pending */
+							HB_EP1RES = bUEP_X_AUTO_TOG | (hub_ep1_pending ? UEP_X_RES_ACK : UEP_X_RES_NAK);
 							break;
 
 						case USB_GET_STATUS:
@@ -1755,13 +1759,13 @@ handle_d2_ep0_setup:
 		D2SetupReqCode = 0xFF;
 		D2SetupLen = 0x00;
 		D2UsbConfig = 0x00;
-		hub_port_status[0] = HUB_PORT_POWER;
+		hub_port_status[0] = HUB_PORT_POWER | HUB_PORT_CONNECTED;
 		hub_port_status[1] = HUB_PORT_POWER;
 		hub_port_status[2] = HUB_PORT_POWER;
-		hub_port_change[0] = 0;
+		hub_port_change[0] = HUB_C_CONNECTION;
 		hub_port_change[1] = 0;
 		hub_port_change[2] = 0;
-		hub_ep1_pending    = 0;
+		hub_ep1_pending    = 0x02;
 		USB_SleepStatus = 0x00;							 /* Clear sleep state — fresh start */
 #ifdef USE_D0_EP1_OUT
 		ep1_data_wait = 0x00;

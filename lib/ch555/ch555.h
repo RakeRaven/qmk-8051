@@ -1141,6 +1141,7 @@ SFR(I2CS_INT_ST,	0xBB);	// I2C slave interrupt status mapped from I2CS_STAT
 #define bUX_DP_PU_EN      0x80      // DP internal pullup resistance (1K5) enable, and force USB device enable
 #define bUX_DM_PU_EN      0x40      // DM internal pullup resistance (1K5) enable, and force USB device enable
 #define bUX_HUB_EP4_EN    0x10      // USB hub endpoint 4 enable, and force USB device enable
+#define bUX_INT_BUSY      0x08      // auto-pause and NAK host while transfer interrupt flag not cleared
 #define bUX_RESET_SIE     0x04      // force reset USB SIE, need software clear
 #define bUX_CLR_ALL       0x02      // force clear FIFO and count of USB
 #define bUX_BUS_RESET     0x01      // ReadOnly: indicate USB bus reset status
