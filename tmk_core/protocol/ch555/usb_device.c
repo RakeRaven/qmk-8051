@@ -39,6 +39,24 @@ volatile UINT8  D2UsbConfig = 0x00;
 
 #define pHB_SETUP_REQ ((PXUSB_SETUP_REQ)pHB_EP0_BUF)
 
+/*
+ * Hub port state machine.
+ * hub_port_status[i]: wPortStatus bits — bit0=CONNECTION, bit1=ENABLE, bit8=POWER
+ * hub_port_change[i]: wPortChange bits — bit0=C_CONNECTION, bit4=C_RESET
+ * hub_ep1_pending:    bitmask of ports with pending status change (bit1=port1, etc.)
+ *
+ * Initial state: powered only (0x0100). Host issues PORT_RESET → we set
+ * connected+enabled and flag C_RESET, then send EP1 IN change notification.
+ */
+#define HUB_PORT_POWER      0x0100u
+#define HUB_PORT_CONNECTED  0x0001u
+#define HUB_PORT_ENABLED    0x0002u
+#define HUB_C_RESET         0x0010u
+
+volatile UINT16 hub_port_status[3];   /* indexed 0..2 = port 1..3 */
+volatile UINT16 hub_port_change[3];
+volatile UINT8  hub_ep1_pending = 0;  /* bit1=port1, bit2=port2, bit3=port3 */
+
 volatile UINT8  D0UsbConfig = 0x00;												/* USB configuration flags - the Configuation Id selected */
 volatile UINT8  Report_Value = 0x00;                                            /* hid interface related */
 volatile UINT8  Idle_Value = 0x00;                                              /* host request hid interface go idle */
@@ -199,6 +217,13 @@ void USB_Device_Init( void )
 	D0SetupLen = 0x00;															/* USB Setup packet length */
 	HBSetupReqCode = 0xFF;
 	HBSetupLen = 0x00;
+	hub_port_status[0] = HUB_PORT_POWER;
+	hub_port_status[1] = HUB_PORT_POWER;
+	hub_port_status[2] = HUB_PORT_POWER;
+	hub_port_change[0] = 0;
+	hub_port_change[1] = 0;
+	hub_port_change[2] = 0;
+	hub_ep1_pending    = 0;
 	D1SetupReqCode = 0xFF;
 	D1SetupLen = 0x00;
 	D1UsbConfig = 0x00;
@@ -253,7 +278,10 @@ void USB_Device_Init( void )
 	D0_ADDR = 0;
 	D1_ADDR = 0;
 	D2_ADDR = 0;
-	HB_ADDR = 0x7F;             												/* Set this address to forward the received data directly to d0 */
+	HB_ADDR = 0x00;             /* Hub enumerates as real hub at default address 0 */
+	D0_ADDR = 0;
+	D1_ADDR = 0;
+	D2_ADDR = 0;
 	USB_IF = 0xFF;
 	USB_IE = bUX_IE_SUSPEND | bUX_IE_TRANSFER | bUX_IE_BUS_RST;
    	USB_CTRL = bUX_DP_PU_EN;                 // usb physical config
@@ -317,10 +345,23 @@ USB_DevIntNext:
 				}
 				break;
 				
+			case UXS_TOKEN_IN | 1:
+				/* Hub EP1 IN — port status change notification sent, go back to NAK */
+				if( hub_ep1_pending ) {
+					/* Send 1-byte bitmask: bit N = port N changed */
+					pHB_EP1_BUF[0] = hub_ep1_pending;
+					hub_ep1_pending = 0;
+					HB_EP1T_L = 1;
+					HB_EP1RES = HB_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;
+				} else {
+					HB_EP1RES = HB_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_NAK;
+				}
+				break;
+
 			case UXS_TOKEN_OUT | 0:
 				HB_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
 				break;
-				
+
 			default:
 handle_hb_ep0_setup:
 				len = 0;
@@ -328,55 +369,86 @@ handle_hb_ep0_setup:
 				HBSetupLen = pHB_SETUP_REQ->wLengthL + ( (UINT16)pHB_SETUP_REQ->wLengthH << 8 );
 				HBSetupReqCode = pHB_SETUP_REQ->bRequest;
 
-				// CLASS Requests (Hub Descriptor, SetPortPower, GetPortStatus, etc.)
+				// CLASS Requests (Hub class: GetStatus, SetFeature, ClearFeature, GetDescriptor)
 				if( ( pHB_SETUP_REQ->bRequestType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_CLASS )
 				{
 					switch( HBSetupReqCode )
 					{
-						case USB_GET_DESCRIPTOR:
-							if( pHB_SETUP_REQ->wValueH == 0x29 ) // Hub Descriptor
+						case USB_GET_DESCRIPTOR: // 0x06 — Hub Descriptor
+							if( pHB_SETUP_REQ->wValueH == 0x29 )
 							{
 								pHBDescr = (PUINT8C)(&HubDescriptor);
 								len = sizeof(USB_Descriptor_Hub_t);
-								if( len != 0xFFFF )
-								{
-									UINT8 i;
-									if( HBSetupLen > len ) HBSetupLen = len;
-									len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
-									HBSetupLen -= len;
-									for( i = 0; i < len; i++ ) pHB_EP0_BUF[i] = pHBDescr[i];
-									pHBDescr += len;
+								if( HBSetupLen > len ) HBSetupLen = len;
+								len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
+								HBSetupLen -= len;
+								{ UINT8 i; for( i = 0; i < len; i++ ) pHB_EP0_BUF[i] = pHBDescr[i]; }
+								pHBDescr += len;
+							}
+							else { len = 0xFFFF; }
+							break;
+
+						case 0x03: // SetFeature
+						{
+							/* wIndex = port number (1-based), wValue = feature selector */
+							UINT8 port = pHB_SETUP_REQ->wIndexL; /* 1..3, or 0 for hub */
+							UINT8 feat = pHB_SETUP_REQ->wValueL;
+							if( port >= 1 && port <= 3 ) {
+								if( feat == 8 ) { /* PORT_POWER */
+									hub_port_status[port-1] |= HUB_PORT_POWER;
+								} else if( feat == 4 ) { /* PORT_RESET */
+									/* Mark port as connected+enabled, flag reset-complete */
+									hub_port_status[port-1] |= HUB_PORT_CONNECTED | HUB_PORT_ENABLED;
+									hub_port_change[port-1] |= HUB_C_RESET;
+									hub_ep1_pending |= (1 << port); /* arm EP1 IN notification */
+									HB_EP1RES = HB_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;
 								}
 							}
+							len = 0; /* ACK with zero-length status */
 							break;
-							
-						case 0x03: // SetFeature (e.g. SetPortPower)
-							len = 0; // successfully ACK
-							break;
-							
+						}
+
 						case 0x01: // ClearFeature
-							len = 0; // successfully ACK
+						{
+							UINT8 port = pHB_SETUP_REQ->wIndexL;
+							UINT8 feat = pHB_SETUP_REQ->wValueL;
+							if( port >= 1 && port <= 3 ) {
+								if( feat == 20 ) { /* C_PORT_RESET (16+4) */
+									hub_port_change[port-1] &= ~HUB_C_RESET;
+								} else if( feat == 16 ) { /* C_PORT_CONNECTION */
+									hub_port_change[port-1] &= ~HUB_C_CONNECTION;
+								}
+							}
+							len = 0;
 							break;
-							
-						case 0x00: // GetStatus (Hub or Port status)
-							if( pHB_SETUP_REQ->bRequestType == 0xA3 ) {
-								// Port status: Connected + Enabled + Powered
-								pHB_EP0_BUF[0] = 0x03; // PORT_CONNECTION | PORT_ENABLE
-								pHB_EP0_BUF[1] = 0x01; // PORT_POWER
+						}
+
+						case 0x00: // GetStatus
+						{
+							UINT8 port = pHB_SETUP_REQ->wIndexL;
+							if( pHB_SETUP_REQ->bRequestType == 0xA3 && port >= 1 && port <= 3 ) {
+								/* Port status: wPortStatus | wPortChange */
+								UINT16 ps = hub_port_status[port-1];
+								UINT16 pc = hub_port_change[port-1];
+								pHB_EP0_BUF[0] = (UINT8)(ps & 0xFF);
+								pHB_EP0_BUF[1] = (UINT8)(ps >> 8);
+								pHB_EP0_BUF[2] = (UINT8)(pc & 0xFF);
+								pHB_EP0_BUF[3] = (UINT8)(pc >> 8);
 							} else {
-								// Hub status: all zeros (no local power issue, no overcurrent)
+								/* Hub status: no local power issue, no overcurrent */
 								pHB_EP0_BUF[0] = 0x00;
 								pHB_EP0_BUF[1] = 0x00;
+								pHB_EP0_BUF[2] = 0x00;
+								pHB_EP0_BUF[3] = 0x00;
 							}
-							pHB_EP0_BUF[2] = 0x00;
-							pHB_EP0_BUF[3] = 0x00;
 							len = 4;
 							if( HBSetupLen > len ) HBSetupLen = len;
 							len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
 							HBSetupLen -= len;
 							HB_EP0T_L = len;
 							break;
-							
+						}
+
 						default:
 							len = 0xFFFF;
 							break;
@@ -416,14 +488,26 @@ handle_hb_ep0_setup:
 								pHBDescr += len;
 							}
 							break;
-							
+
 						case USB_SET_ADDRESS:
 							HBSetupLen = pHB_SETUP_REQ->wValueL;
 							break;
-							
+
 						case USB_SET_CONFIGURATION:
+							/* Hub configured — arm EP1 IN to NAK (no change pending yet) */
+							HB_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;
 							break;
-							
+
+						case USB_GET_STATUS:
+							pHB_EP0_BUF[0] = 0x00;
+							pHB_EP0_BUF[1] = 0x00;
+							len = 2;
+							if( HBSetupLen > len ) HBSetupLen = len;
+							len = HBSetupLen >= DEF_ENDP0_SIZE ? DEF_ENDP0_SIZE : HBSetupLen;
+							HBSetupLen -= len;
+							HB_EP0T_L = len;
+							break;
+
 						default:
 							len = 0xFFFF;
 							break;
@@ -1648,10 +1732,12 @@ handle_d2_ep0_setup:
     	/* Bus reset event — host is resetting the device.
 		 * Must fully reinitialize all USB state per USB spec. */
         USB_EP_init();                           /* Re-init endpoints with clean toggle bits (DATA0) */
-        D0_ADDR = 0;								 /* Reset device address to 0 */
-        HB_ADDR = 0x7F;             
+        D0_ADDR = 0;
+        D1_ADDR = 0;
+        D2_ADDR = 0;
+        HB_ADDR = 0x00;
         USB_IF = 0xFF;								 /* Clear all pending interrupt flags */
-        
+
         USB_IE = bUX_IE_SUSPEND | bUX_IE_TRANSFER | bUX_IE_BUS_RST;
 
 		/* Fully reset all state variables */
@@ -1660,6 +1746,21 @@ handle_d2_ep0_setup:
 		D0UsbConfig = 0x00;								 /* Not yet configured */
 		D0SetupReqCode = 0xFF;							 /* No pending request */
 		D0SetupLen = 0x00;
+		HBSetupReqCode = 0xFF;
+		HBSetupLen = 0x00;
+		D1SetupReqCode = 0xFF;
+		D1SetupLen = 0x00;
+		D1UsbConfig = 0x00;
+		D2SetupReqCode = 0xFF;
+		D2SetupLen = 0x00;
+		D2UsbConfig = 0x00;
+		hub_port_status[0] = HUB_PORT_POWER;
+		hub_port_status[1] = HUB_PORT_POWER;
+		hub_port_status[2] = HUB_PORT_POWER;
+		hub_port_change[0] = 0;
+		hub_port_change[1] = 0;
+		hub_port_change[2] = 0;
+		hub_ep1_pending    = 0;
 		USB_SleepStatus = 0x00;							 /* Clear sleep state — fresh start */
 #ifdef USE_D0_EP1_OUT
 		ep1_data_wait = 0x00;
@@ -1690,7 +1791,7 @@ handle_d2_ep0_setup:
 	}
   	
   	/* Determine again whether there are still USB interrupts that need to be processed */
-	if( USB_IF & ( bUX_IF_D0_TRANS | bUX_IF_SUSPEND | bUX_IF_BUS_RST ) ) 
+	if( USB_IF & ( bUX_IF_HB_TRANS | bUX_IF_D0_TRANS | bUX_IF_D1_TRANS | bUX_IF_D2_TRANS | bUX_IF_SUSPEND | bUX_IF_BUS_RST ) )
 	{
 		goto USB_DevIntNext;
 	}    
