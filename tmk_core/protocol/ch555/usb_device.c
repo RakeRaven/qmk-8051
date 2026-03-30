@@ -52,6 +52,7 @@ volatile UINT8  D2UsbConfig = 0x00;
 #define HUB_PORT_CONNECTED  0x0001u
 #define HUB_PORT_ENABLED    0x0002u
 #define HUB_C_RESET         0x0010u
+#define HUB_C_CONNECTION    0x0001u
 
 volatile UINT16 hub_port_status[3];   /* indexed 0..2 = port 1..3 */
 volatile UINT16 hub_port_change[3];
