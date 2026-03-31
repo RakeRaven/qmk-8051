@@ -1092,6 +1092,9 @@ void protocol_pre_init(void) {
 
 void protocol_post_init(void) {
     host_set_driver(&ch555_usb_stack_driver);
+#ifdef NKRO_ENABLE
+    keymap_config.nkro = 1; /* TEMPFIX: force NKRO on until EEPROM is implemented */
+#endif
 
     /* Wait for USB enumeration to complete.
      * The old code used a blind 1000ms delay which was unreliable:
