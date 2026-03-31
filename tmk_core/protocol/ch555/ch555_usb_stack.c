@@ -692,6 +692,7 @@ void EVENT_USB_Device_ControlRequest(void) {
 
                         Endpoint_ClearOUT();
                         Endpoint_ClearStatusStage();
+                        led_set(keyboard_led_state);
                         break;
                 }
             }
