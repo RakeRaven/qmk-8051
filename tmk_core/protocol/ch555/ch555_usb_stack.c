@@ -776,7 +776,7 @@ static void send_keyboard(report_keyboard_t *report) {
         send_report(KEYBOARD_IN_EPNUM, &report->mods, 8);
     } else {
 #ifdef NKRO_ENABLE
-        if (keymap_config.nkro) {
+        if (1 /* TEMPFIX: hardcode nkro on until EEPROM is implemented */ || keymap_config.nkro) {
             size = sizeof(struct nkro_report);
             send_report(SHARED_IN_EPNUM, report, size);
             keyboard_report_sent = *report;

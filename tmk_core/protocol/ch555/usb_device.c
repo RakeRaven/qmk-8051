@@ -225,12 +225,24 @@ void USB_Device_Init( void )
 	/* Port 1 (D0/keyboard) is always physically present — report as connected so
 	 * the host will issue PORT_RESET and enumerate D0.  Ports 2/3 start powered-only. */
 	hub_port_status[0] = HUB_PORT_POWER | HUB_PORT_CONNECTED;
+	hub_port_change[0] = HUB_C_CONNECTION;
+	hub_ep1_pending    = 0x02;
+#ifdef SHARED_EP_ENABLE
+	hub_port_status[1] = HUB_PORT_POWER | HUB_PORT_CONNECTED;
+	hub_port_change[1] = HUB_C_CONNECTION;
+	hub_ep1_pending   |= 0x04;  /* bit 2 = port 2 has a status change pending */
+#else
 	hub_port_status[1] = HUB_PORT_POWER;
-	hub_port_status[2] = HUB_PORT_POWER;
-	hub_port_change[0] = HUB_C_CONNECTION; /* notify host: something connected on port 1 */
 	hub_port_change[1] = 0;
+#endif
+#ifdef RAW_ENABLE
+	hub_port_status[2] = HUB_PORT_POWER | HUB_PORT_CONNECTED;
+	hub_port_change[2] = HUB_C_CONNECTION;
+	hub_ep1_pending   |= 0x08;  /* bit 3 = port 3 has a status change pending */
+#else
+	hub_port_status[2] = HUB_PORT_POWER;
 	hub_port_change[2] = 0;
-	hub_ep1_pending    = 0x02;  /* bit 1 = port 1 has a status change pending */
+#endif
 	D1SetupReqCode = 0xFF;
 	D1SetupLen = 0x00;
 	D1UsbConfig = 0x00;
@@ -1805,12 +1817,24 @@ handle_d2_ep0_setup:
 		D2SetupLen = 0x00;
 		D2UsbConfig = 0x00;
 		hub_port_status[0] = HUB_PORT_POWER | HUB_PORT_CONNECTED;
-		hub_port_status[1] = HUB_PORT_POWER;
-		hub_port_status[2] = HUB_PORT_POWER;
 		hub_port_change[0] = HUB_C_CONNECTION;
-		hub_port_change[1] = 0;
-		hub_port_change[2] = 0;
 		hub_ep1_pending    = 0x02;
+#ifdef SHARED_EP_ENABLE
+		hub_port_status[1] = HUB_PORT_POWER | HUB_PORT_CONNECTED;
+		hub_port_change[1] = HUB_C_CONNECTION;
+		hub_ep1_pending   |= 0x04;
+#else
+		hub_port_status[1] = HUB_PORT_POWER;
+		hub_port_change[1] = 0;
+#endif
+#ifdef RAW_ENABLE
+		hub_port_status[2] = HUB_PORT_POWER | HUB_PORT_CONNECTED;
+		hub_port_change[2] = HUB_C_CONNECTION;
+		hub_ep1_pending   |= 0x08;
+#else
+		hub_port_status[2] = HUB_PORT_POWER;
+		hub_port_change[2] = 0;
+#endif
 		USB_SleepStatus = 0x00;							 /* Clear sleep state — fresh start */
 #ifdef USE_D0_EP1_OUT
 		ep1_data_wait = 0x00;
