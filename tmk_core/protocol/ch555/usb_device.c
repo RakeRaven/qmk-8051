@@ -46,8 +46,11 @@ volatile UINT8  D2UsbConfig = 0x00;
  * hub_port_change[i]: wPortChange bits — bit0=C_CONNECTION, bit4=C_RESET
  * hub_ep1_pending:    bitmask of ports with pending status change (bit1=port1, etc.)
  *
- * Initial state: powered only (0x0100). Host issues PORT_RESET → we set
- * connected+enabled and flag C_RESET, then send EP1 IN change notification.
+ * Initial state: port 1 = POWER+CONNECTED (0x0101) with C_CONNECTION pending
+ * (D0/keyboard is always physically present). Ports 2/3 = POWER only (0x0100).
+ * Host sees C_CONNECTION on EP1 IN → issues PORT_RESET → we set ENABLED and
+ * flag C_RESET, then notify via EP1 IN. On power-cycle (CLEAR/SET PORT_POWER),
+ * C_CONNECTION is re-armed so the host re-enumerates the downstream device.
  */
 #define HUB_PORT_POWER      0x0100u
 #define HUB_PORT_CONNECTED  0x0001u
@@ -126,11 +129,11 @@ void USB_EP_init( void )
     HB_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;
 
     D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;  /* toggle bits cleared (DATA0) */
-    D0_EP_MOD = bUX_DEV_EN;  
+    D0_EP_MOD = 0;              /* D0 disabled until PORT_RESET on port 1 */
     D1_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
-    D1_EP_MOD = bUX_DEV_EN;
+    D1_EP_MOD = 0;              /* D1 disabled until PORT_RESET on port 2 */
     D2_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
-    D2_EP_MOD = bUX_DEV_EN;
+    D2_EP_MOD = 0;              /* D2 disabled until PORT_RESET on port 3 */
 #ifdef USE_D0_EP1_IN
     D0_EP1RES = bUEP_X_AUTO_TOG | UEP_X_RES_NAK;  /* auto-toggle, NAK until we have data */
 #endif
@@ -401,8 +404,45 @@ handle_hb_ep0_setup:
 							if( port >= 1 && port <= 3 ) {
 								if( feat == 8 ) { /* PORT_POWER */
 									hub_port_status[port-1] |= HUB_PORT_POWER;
+									/* If a device is physically present on this port, re-arm
+									 * C_CONNECTION so the host re-enumerates after power cycle. */
+									if( port == 1 ) { /* D0/keyboard always present */
+										hub_port_status[port-1] |= HUB_PORT_CONNECTED;
+										hub_port_change[port-1] |= HUB_C_CONNECTION;
+										hub_ep1_pending |= (1 << port);
+										HB_EP1RES = HB_EP1RES & ~MASK_UEP_X_RES | UEP_X_RES_ACK;
+									}
 								} else if( feat == 4 ) { /* PORT_RESET */
-									/* Mark port as connected+enabled, flag reset-complete */
+									/* Actually reset the sub-device SIE so it can enumerate
+									 * at address 0 with clean state (clear any prior STALL,
+									 * reset toggles, reset address). Enable bUX_DEV_EN now
+									 * — sub-devices start disabled to avoid address-0 collision
+									 * with the hub during initial enumeration. */
+									if( port == 1 ) {
+										D0_ADDR = 0;
+										D0_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+										D0_EP0T_L = 0;
+										D0SetupReqCode = 0xFF;
+										D0SetupLen = 0;
+										D0UsbConfig = 0;
+										D0_EP_MOD |= bUX_DEV_EN;
+									} else if( port == 2 ) {
+										D1_ADDR = 0;
+										D1_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+										D1_EP0T_L = 0;
+										D1SetupReqCode = 0xFF;
+										D1SetupLen = 0;
+										D1UsbConfig = 0;
+										D1_EP_MOD |= bUX_DEV_EN;
+									} else if( port == 3 ) {
+										D2_ADDR = 0;
+										D2_EP0RES = UEP_R_RES_ACK | UEP_T_RES_NAK;
+										D2_EP0T_L = 0;
+										D2SetupReqCode = 0xFF;
+										D2SetupLen = 0;
+										D2UsbConfig = 0;
+										D2_EP_MOD |= bUX_DEV_EN;
+									}
 									hub_port_status[port-1] |= HUB_PORT_CONNECTED | HUB_PORT_ENABLED;
 									hub_port_change[port-1] |= HUB_C_RESET;
 									hub_ep1_pending |= (1 << port); /* arm EP1 IN notification */
@@ -418,10 +458,14 @@ handle_hb_ep0_setup:
 							UINT8 port = pHB_SETUP_REQ->wIndexL;
 							UINT8 feat = pHB_SETUP_REQ->wValueL;
 							if( port >= 1 && port <= 3 ) {
-								if( feat == 20 ) { /* C_PORT_RESET (16+4) */
+								if( feat == 20 ) { /* C_PORT_RESET */
 									hub_port_change[port-1] &= ~HUB_C_RESET;
 								} else if( feat == 16 ) { /* C_PORT_CONNECTION */
 									hub_port_change[port-1] &= ~HUB_C_CONNECTION;
+								} else if( feat == 1 ) { /* PORT_ENABLE — host disables port during retry */
+									hub_port_status[port-1] &= ~HUB_PORT_ENABLED;
+								} else if( feat == 8 ) { /* PORT_POWER — host power-cycling the port */
+									hub_port_status[port-1] &= ~(HUB_PORT_POWER | HUB_PORT_ENABLED);
 								}
 							}
 							len = 0;

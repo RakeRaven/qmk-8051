@@ -12,6 +12,10 @@
 
 #define DIODE_DIRECTION ROW2COL
 
+// Rotary encoder: one of PORT5_4..PORT5_7 is PAD_A and another is PAD_B — exact pins unknown.
+// PAD_A = clockwise (scroll up / vol up), PAD_B = counter-clockwise (scroll down / vol down).
+// Try combinations: (PORT5_4, PORT5_5), (PORT5_4, PORT5_6), (PORT5_5, PORT5_6), etc.
+// Swap A and B if direction is reversed.
 #define NUM_ENCODERS 1
 #define ENCODERS_PAD_A { PORT2_7 }
 #define ENCODERS_PAD_B { PORT2_0 }
