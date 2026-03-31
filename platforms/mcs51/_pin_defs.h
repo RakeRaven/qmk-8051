@@ -32,7 +32,7 @@
 #    define PORT2 0x2
 #    define PORT3 0x3
 #    define PORT4 0x4
-//#    define PORT5 0x5
+#    define PORT5 0x5
 //#    define PORT6 0x6
 #    define PORT7 0x7
 #endif

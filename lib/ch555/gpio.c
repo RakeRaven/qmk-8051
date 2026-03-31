@@ -39,6 +39,12 @@ void pinModeInputHighQMK(uint8_t pin) {
         writePinHigh(pin);
         break;
 #endif
+#ifdef PORT5
+        case PORT5:
+        P5_DIR    &= ~pinmask; /* input */
+        P5_OUT_PU |=  pinmask; /* pullup */
+        break;
+#endif
     }
 
 }
@@ -51,6 +57,15 @@ void pinModeOutputQMK(uint8_t pin) {
     }
 #endif
     // for port 0->4, use Quasi-BiDi mode. So we don't have to change mode. just need to writePin
+#ifdef PORT5
+    {
+        __data uint8_t port     = PORTx(pin);
+        __data uint8_t pinmask  = PIN_MASK(pin);
+        if (port == PORT5) {
+            P5_DIR |= pinmask; /* push-pull output */
+        }
+    }
+#endif
 }
 
 void pinModeInputZ(uint8_t pin) {
@@ -85,6 +100,12 @@ void pinModeInputZ(uint8_t pin) {
         case PORT4:
         P4_MOD_OC &= ~pinmask;
         P4_DIR_PU &= ~pinmask;
+        break;
+#endif
+#ifdef PORT5
+        case PORT5:
+        P5_DIR    &= ~pinmask; /* input */
+        P5_OUT_PU &= ~pinmask; /* no pullup (high-Z) */
         break;
 #endif
 #ifdef PORT7
@@ -127,6 +148,11 @@ void pinModeOutputPushPull(uint8_t pin) {
         case PORT4:
         P4_MOD_OC &= ~pinmask;
         P4_DIR_PU |=  pinmask;
+        break;
+#endif
+#ifdef PORT5
+        case PORT5:
+        P5_DIR |= pinmask; /* push-pull output */
         break;
 #endif
 #ifdef PORT7
@@ -252,6 +278,11 @@ uint8_t readPin(uint8_t pin) {
         return ((bool)(P4 & pinmask));
         break;
 #endif
+#ifdef PORT5
+        case PORT5:
+        return ((bool)(P5_IN & pinmask));
+        break;
+#endif
 #ifdef PORT7
         case PORT7:
         return ((bool)(P7 & (pinmask<<4))); // bP7_{0,1}_IN
@@ -291,6 +322,11 @@ void writePinHigh(uint8_t pin) {
         P4 |=  pinmask;
         break;
 #endif
+#ifdef PORT5
+        case PORT5:
+        P5_OUT_PU |= pinmask;
+        break;
+#endif
 #ifdef PORT7
         case PORT7:
         P7 |=  pinmask; // _OUT_PU
@@ -325,6 +361,11 @@ void writePinLow(uint8_t pin) {
 #ifdef PORT4
         case PORT4:
         P4 &= ~pinmask;
+        break;
+#endif
+#ifdef PORT5
+        case PORT5:
+        P5_OUT_PU &= ~pinmask;
         break;
 #endif
 #ifdef PORT7
