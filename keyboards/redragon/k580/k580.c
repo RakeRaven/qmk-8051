@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include "k580.h"
+#include "config.h"
 #include "led.h"
 #include "gpio.h"
 
