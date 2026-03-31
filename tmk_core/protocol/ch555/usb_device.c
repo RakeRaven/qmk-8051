@@ -575,6 +575,7 @@ handle_hb_ep0_setup:
 					HB_EP0T_L = len;
 				break;
 		}
+		HB_STATUS = 0;   /* clear bUX_IF_HB_TRANS — same as D0_STATUS=0 clears bUX_IF_D0_TRANS */
 	}
 	else if( us & bUX_IF_D0_TRANS )            
 	{
