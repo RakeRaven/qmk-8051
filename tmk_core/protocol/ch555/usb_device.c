@@ -13,7 +13,6 @@
 #include "hal.h"
 #include "debug.h"
 #include "usb_device.h"
-#include "led.h"
 
 /******************************************************************************/
 /* constant variable definition */
@@ -725,7 +724,6 @@ handle_hb_ep0_setup:
 				{
 					case HID_SET_REPORT:
 						KB_USB_SetReport = pD0_EP0_BUF[ 0 ];
-						led_set(KB_USB_SetReport);
 						D0_EP0RES ^= bUEP_R_TOG;
                         break;
                         

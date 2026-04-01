@@ -1180,6 +1180,13 @@ void protocol_post_task(void) {
     //USB_USBTask();
 #endif
 
+    /* Sync LED state from ISR-updated KB_USB_SetReport to keyboard_led_state,
+     * then call led_set() safely from the main loop (not inside the USB ISR). */
+    if (KB_USB_SetReport != keyboard_led_state) {
+        keyboard_led_state = KB_USB_SetReport;
+        led_set(keyboard_led_state);
+    }
+
 	if( MCU_Sleep_Operate )
 	{
 		EA = 0;	
