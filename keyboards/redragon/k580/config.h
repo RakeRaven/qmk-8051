@@ -39,10 +39,10 @@
 
 #define USB_MAX_POWER_CONSUMPTION 100
 
-/* Indicator LEDs — active low (LED on when pin is driven low) */
+/* Indicator LEDs — active high (LED on when pin is driven high) */
 #define LED_NUM_LOCK_PIN    PORT5_3
 #define LED_CAPS_LOCK_PIN   PORT5_2
 #define LED_SCROLL_LOCK_PIN PORT5_1
-#define LED_PIN_ON_STATE    0
+#define LED_PIN_ON_STATE    1
 /* PORT5_0 = Win Lock LED — pin defined for future use, logic not implemented yet */
 #define LED_WIN_LOCK_PIN    PORT5_0
