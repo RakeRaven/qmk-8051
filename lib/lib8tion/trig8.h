@@ -27,6 +27,7 @@
 ///
 /// @param theta input angle from 0-65535
 /// @returns sin of theta, value between -32767 to 32767.
+#if defined(__AVR__)
 LIB8STATIC int16_t sin16_avr( uint16_t theta )
 {
     static const uint8_t data[] =
@@ -108,6 +109,7 @@ LIB8STATIC int16_t sin16_C( uint16_t theta )
 
     return y;
 }
+#endif /* __AVR__ */
 
 
 /// Fast 16-bit approximation of cos(x). This approximation never varies more than
@@ -156,6 +158,7 @@ static const uint8_t b_m16_interleave[8] = { 0, 49, 49, 41, 90, 27, 117, 10 };
 ///
 /// @param theta input angle from 0-255
 /// @returns sin of theta, value between 0 and 255
+#if defined(__AVR__) && !defined(LIB8_ATTINY)
 LIB8STATIC uint8_t  sin8_avr( uint8_t theta)
 {
     uint8_t offset = theta;
@@ -205,6 +208,7 @@ LIB8STATIC uint8_t  sin8_avr( uint8_t theta)
 
     return y;
 }
+#endif /* __AVR__ && !LIB8_ATTINY */
 
 
 /// Fast 8-bit approximation of sin(x). This approximation never varies more than
