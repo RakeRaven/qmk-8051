@@ -8,7 +8,7 @@ CH555_SRC_USB  = $(CH555_PATH)/gpio.c
 ifeq ($(strip $(RGB_MATRIX_ENABLE)), yes)
 CH555_SRC_USB += $(CH555_PATH)/rgb_matrix_ch555.c
 endif
-CH555_SRC_USB += $(CH555_PATH)/FLASH.C
+CH555_SRC_USB += $(CH555_PATH)/flash.c
 CH555_SRC_USB += $(CH555_PATH)/hal.c
 #CH555_SRC_USB += $(CH555_DIR)/usb_handler.c
 CH555_SRC_USB += $(CH555_DIR)/usb_device.c
