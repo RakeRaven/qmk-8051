@@ -104,7 +104,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         break;*/
     }
     return true;
-};
+}
 
 //encoder support
 
@@ -114,13 +114,13 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     if (index == 0) { // First encoder 
         if (clockwise) {
             if(BRI){
-                rgblight_increase_val_noeeprom();
+                rgb_matrix_increase_val_noeeprom();
             }else{
                 tap_code(KC_VOLU);
             }
         } else {
             if(BRI){
-                rgblight_decrease_val_noeeprom();
+                rgb_matrix_decrease_val_noeeprom();
             }else{
                 tap_code(KC_VOLD);
             }
