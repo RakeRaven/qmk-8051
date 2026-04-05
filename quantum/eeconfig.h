@@ -150,7 +150,7 @@ void eeconfig_init_user_datablock(void);
 #define EECONFIG_DEBOUNCE_HELPER_CHECKED(name, offset, config)          \
     static uint8_t dirty_##name = false;                                \
                                                                         \
-    __xdata bool eeconfig_check_valid_##name(void);                             \
+    bool eeconfig_check_valid_##name(void);                             \
     void eeconfig_post_flush_##name(void);                              \
                                                                         \
     static inline void eeconfig_init_##name(void) {                     \
@@ -160,7 +160,7 @@ void eeconfig_init_user_datablock(void);
             dirty_##name = false;                                       \
         }                                                               \
     }                                                                   \
-    static inline void eeconfig_flush_##name(__xdata bool force) {              \
+    static inline void eeconfig_flush_##name(bool force) {              \
         if (force || dirty_##name) {                                    \
             eeprom_update_block(&config, offset, sizeof(config));       \
             eeconfig_post_flush_##name();                               \
@@ -174,7 +174,7 @@ void eeconfig_init_user_datablock(void);
             flush_timer = timer_read();                                 \
         }                                                               \
     }                                                                   \
-    static inline void eeconfig_flag_##name(__xdata bool v) {                   \
+    static inline void eeconfig_flag_##name(bool v) {                   \
         dirty_##name |= v;                                              \
     }                                                                   \
     static inline void eeconfig_write_##name(typeof(config) *conf) {    \
@@ -187,7 +187,7 @@ void eeconfig_init_user_datablock(void);
 #define EECONFIG_DEBOUNCE_HELPER(name, offset, config)     \
     EECONFIG_DEBOUNCE_HELPER_CHECKED(name, offset, config) \
                                                            \
-    __xdata bool eeconfig_check_valid_##name(void) {               \
+    bool eeconfig_check_valid_##name(void) {               \
         return true;                                       \
     }                                                      \
     void eeconfig_post_flush_##name(void) {}
