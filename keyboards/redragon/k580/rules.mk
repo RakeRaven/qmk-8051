@@ -1,5 +1,9 @@
 ENCODER_ENABLE = no
-ENCODER_MAP_ENABLE = no
+
+#CUSTOM_MATRIX = lite  # matrix_scan_raw() in keyboards/redragon/k580/matrix.c reads LED ISR shadow buffer
+#RGB_MATRIX_ENABLE = yes
+#RGB_MATRIX_DRIVER = custom
+ENCODER_MAP_ENABLE = yes
 
 
 
@@ -27,7 +31,7 @@ EEPROM_DRIVER = transient
 #EEPROM_DRIVER = wear_leveling
 
 
-EXTRAKEY_ENABLE = no
+EXTRAKEY_ENABLE = yes
 NKRO_ENABLE = yes
 MOUSEKEY_ENABLE = no
 RAW_ENABLE = yes
