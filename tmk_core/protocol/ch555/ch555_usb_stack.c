@@ -25,6 +25,7 @@
 #include "keyboard.h"
 #include "action.h"
 #include "led.h"
+#include "gpio.h"
 #include "sendchar.h"
 #include "debug.h"
 #ifdef SLEEP_LED_ENABLE
@@ -1156,6 +1157,23 @@ void protocol_pre_task(void) {
 #endif
 }
 
+/* TEMPFIX: Caps Lock freeze diagnostic. Blinks Num Lock x2 when a LED state
+ * change is detected, then (after led_set() returns) blinks Num+Scroll x2.
+ * Restores the real LED state after each burst so it doesn't look like a
+ * stuck indicator. Remove once Bug 3 is solved. */
+static void diag_blink(uint8_t times, bool num, bool scroll, led_t restore_state) {
+    for (uint8_t i = 0; i < times; i++) {
+        if (num)    writePin(LED_NUM_LOCK_PIN, LED_PIN_ON_STATE);
+        if (scroll) writePin(LED_SCROLL_LOCK_PIN, LED_PIN_ON_STATE);
+        wait_ms(150);
+        if (num)    writePin(LED_NUM_LOCK_PIN, !LED_PIN_ON_STATE);
+        if (scroll) writePin(LED_SCROLL_LOCK_PIN, !LED_PIN_ON_STATE);
+        wait_ms(150);
+    }
+    led_update_ports(restore_state);
+    wait_ms(300);
+}
+
 void protocol_post_task(void) {
 
 //#ifdef BLUETOOTH_ENABLE
@@ -1183,8 +1201,12 @@ void protocol_post_task(void) {
     /* Sync LED state from ISR-updated KB_USB_SetReport to keyboard_led_state,
      * then call led_set() safely from the main loop (not inside the USB ISR). */
     if (KB_USB_SetReport != keyboard_led_state) {
+        diag_blink(2, true, false, (led_t){.raw = keyboard_led_state});
+
         keyboard_led_state = KB_USB_SetReport;
         led_set(keyboard_led_state);
+
+        diag_blink(2, true, true, (led_t){.raw = keyboard_led_state});
     }
 
 	if( MCU_Sleep_Operate )
