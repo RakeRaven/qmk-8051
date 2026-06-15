@@ -1038,9 +1038,15 @@ static void setup_usb(void) {
 
     //USB_init();
     USB_Device_Init();
-  
+
+    /* USB must be higher priority than LED/I2C (hw_ch555.md requirement).
+     * LED_INT fires at ~23kHz and uses E_DIS to globally mask interrupts during
+     * DMA feed — without this, LED_INT at same priority as USB can starve
+     * USB_DeviceInterrupt long enough to break enumeration entirely. */
+    IP_EX |= bIP_USB;
+
     // for Console_Task
-    //USB_Device_EnableSOFEvents(); TODO implement this 
+    //USB_Device_EnableSOFEvents(); TODO implement this
 }
 
 //void HID_EP_init(void) {
@@ -1126,7 +1132,6 @@ void protocol_post_init(void) {
     }
 #endif
 
-	P4_LED_KEY = 0xFF; /* enable key mode (switch PORT4 from LED to GPIO) */
 }
 
 #define NO_USB_STARTUP_CHECK //TODO implement this 

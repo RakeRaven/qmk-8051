@@ -162,6 +162,10 @@ void rgb_matrix_ch555_init(void) {
     P4 = P2 = P1 = 0xFF;
     P4_MOD_OC = P2_MOD_OC = P1_MOD_OC = 0x00;
     P4_DIR_PU = P2_DIR_PU = P1_DIR_PU = 0xFF;
+    /* P4_LED_KEY=1 enables LED-current-limited drive (MOD_OC=0,DIR_PU=1,LED_KEY=1 → mode 011)
+     * and key-scan-with-pullup (MOD_OC=1,DIR_PU=1,LED_KEY=1 → mode 111) for P4.
+     * Must be set before IE_PWM_I2C=1 so the ISR sees the correct pin mode from first fire. */
+    P4_LED_KEY = 0xFF;
 
     /* P0, P3 (COM lines): push-pull, all high */
     P0 = P3 = 0xFF;
