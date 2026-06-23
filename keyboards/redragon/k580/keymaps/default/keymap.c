@@ -25,7 +25,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         /* row 6 — macro keys */                                    U_G1,     U_G2,     U_G3,      U_G4,    U_G5,     U_REC,
         /* row 7 — media keys */                                                                                                U_VOLBRI, KC_MPRV, KC_MPLY, KC_MNXT),
 };
-/*
 /* Macro LED support
                     {G1, G2, G3, G4, G5, REC} */
 //int macro_state[] = {0,  0,  0,  0,  0,  0  };
@@ -104,7 +103,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         break;*/
     }
     return true;
-};
+}
 
 //encoder support
 
@@ -161,17 +160,13 @@ p7: COM30,
 */
 
             /*COM16*/	/*COM17*/	/*COM18*/	/*COM19*/	/*COM20*/	/*COM21*/	/*COM22*/	/*COM23*/	/*COM24*/	/*COM25*/ /*COM25*/	/*COM27*/	/*COM28*/	/*COM29*/	/*COM30*/	/*COM31*/
-/*KeyPu0     ESC,       F1,   	  F2,   	  F3,   	  F4,   	  F5,   	  F6,   	  F7,   	  F8,   	  F9,   	  F10,      F11,      F12,      PSCR,     SCRL,     PAUS,
-KeyPu1       GRV,       1,    	  2,    	  3,    	  4,    	  5,    	  6,    	  7,    	  8,    	  9,    	  0,    	  MINS,     EQL,      BSPC,     INS,      HOME,
-KeyPu2       TAB,       Q,    	  W,    	  E,    	  R,    	  T,    	  Y,    	  U,    	  I,    	  O,    	  P,    	  LBRC,     RBRC,     BSLS, 	  DEL,      END,
-KeyPu3      LSFT,       A,    	  S,    	  D,    	  F,    	  G,    	  H,    	  J,    	  K,    	  L,    	SCLN,       QUOT,               ENT,      N7,       PGDN
-KeyPu4      LCTL,       Z,    	  X,    	  C,    	  V,    	  B,    	  N,    	  M,    	  COMM,  DOT,   SLSH,  RSFT,  		  			                    UP,
-/*KeyPu1*/
-/*KeyPu2*/
-/*KeyPu3*/
-/*KeyPu4*/
-/*KeyPu5*/
-/*KeyPu6*/
+// KeyPu0     ESC,       F1,       F2,       F3,       F4,       F5,       F6,       F7,       F8,       F9,       F10,      F11,      F12,      PSCR,     SCRL,     PAUS,
+// KeyPu1     GRV,       1,        2,        3,        4,        5,        6,        7,        8,        9,        0,        MINS,     EQL,      BSPC,     INS,      HOME,
+// KeyPu2     TAB,       Q,        W,        E,        R,        T,        Y,        U,        I,        O,        P,        LBRC,     RBRC,     BSLS,     DEL,      END,
+// KeyPu3    LSFT,       A,        S,        D,        F,        G,        H,        J,        K,        L,       SCLN,      QUOT,               ENT,      N7,       PGDN
+// KeyPu4    LCTL,       Z,        X,        C,        V,        B,        N,        M,       COMM,     DOT,     SLSH,      RSFT,                           UP,
+// KeyPu5
+// KeyPu6
 
 /* Keys left to configure are:
 Numlock
